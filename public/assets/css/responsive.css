@@ -1,0 +1,509 @@
+/* ====================================================================
+   responsive.css — FUP Plataforma Académica
+   Complementa app.css. No duplica reglas existentes.
+   Importar DESPUÉS de app.css en layouts/main.php
+   ==================================================================== */
+
+/* ── Breakpoint variables (solo para referencia en JS) ───────────── */
+:root {
+  --bp-xs: 480px;
+  --bp-sm: 640px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+}
+
+/* ── Embebidos responsivos ────────────────────────────────────────── */
+img, iframe, video, embed { max-width: 100%; height: auto; }
+
+/* ====================================================================
+   SCROLLBARS ESTILIZADOS (thin, cross-browser)
+   ==================================================================== */
+
+/* Sidebar */
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.15) transparent;
+}
+.sidebar::-webkit-scrollbar          { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb    { background: rgba(255,255,255,.2); border-radius: 4px; }
+.sidebar::-webkit-scrollbar-track    { background: transparent; }
+
+/* Contenido principal */
+.app-content {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+.app-content::-webkit-scrollbar         { width: 6px; }
+.app-content::-webkit-scrollbar-track   { background: #f1f5f9; }
+.app-content::-webkit-scrollbar-thumb   { background: #cbd5e1; border-radius: 6px; }
+.app-content::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Scroll horizontal de tablas del inventario */
+.inv-scroll,
+.sinv-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+  -webkit-overflow-scrolling: touch;
+}
+.inv-scroll::-webkit-scrollbar,
+.sinv-scroll::-webkit-scrollbar          { height: 6px; }
+.inv-scroll::-webkit-scrollbar-track,
+.sinv-scroll::-webkit-scrollbar-track    { background: #f1f5f9; }
+.inv-scroll::-webkit-scrollbar-thumb,
+.sinv-scroll::-webkit-scrollbar-thumb    { background: #94a3b8; border-radius: 6px; }
+
+/* Drawer body scroll */
+.mc-drawer-body,
+#inv-drawer-body {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
+}
+.mc-drawer-body::-webkit-scrollbar,
+#inv-drawer-body::-webkit-scrollbar       { width: 5px; }
+.mc-drawer-body::-webkit-scrollbar-thumb,
+#inv-drawer-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; }
+
+/* Tablas dinámicas del editor (RAC, Temas, etc.) */
+.syl-dyn-list,
+#ct-list,
+#rac-list {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
+#ct-list {
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+#ct-list::-webkit-scrollbar      { width: 4px; }
+#ct-list::-webkit-scrollbar-thumb{ background: #94a3b8; border-radius: 4px; }
+
+/* ====================================================================
+   PATRÓN UNIVERSAL: .tbl-wrap
+   Envuelve cualquier tabla que necesite scroll horizontal.
+   ==================================================================== */
+.tbl-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--r-lg, 14px);
+  border: 1px solid var(--border, #e2e8f0);
+  background: #fff;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+.tbl-wrap::-webkit-scrollbar         { height: 6px; }
+.tbl-wrap::-webkit-scrollbar-track   { background: #f1f5f9; border-radius: 0 0 var(--r-lg,14px) var(--r-lg,14px); }
+.tbl-wrap::-webkit-scrollbar-thumb   { background: #94a3b8; border-radius: 6px; }
+
+.tbl-wrap table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+}
+
+/* ====================================================================
+   SOMBRA EN COLUMNAS STICKY (indica scroll hacia la derecha)
+   ==================================================================== */
+/* Inventario /syllabus/inventario.php — col Asignatura (3ª col) */
+.inv-table td:nth-child(3) { position: relative; }
+.inv-table td:nth-child(3)::after {
+  content: '';
+  position: absolute;
+  top: 0; right: -8px;
+  width: 8px; height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,.07), transparent);
+  pointer-events: none;
+}
+
+/* Inventario /programas/tabs/syllabus_inventario.php — col Asignatura (2ª col) */
+.sinv-table td:nth-child(2) { position: relative; }
+.sinv-table td:nth-child(2)::after {
+  content: '';
+  position: absolute;
+  top: 0; right: -8px;
+  width: 8px; height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,.07), transparent);
+  pointer-events: none;
+}
+
+/* ====================================================================
+   RÚBRICA — tabla en desktop · cards en móvil
+   ==================================================================== */
+.syl-rub-cards { display: none; }
+
+/* Estilos de la vista de cards (visibles solo en móvil) */
+.syl-rub-card {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: var(--r, 10px);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.syl-rub-card-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+.syl-rub-card-hdr .rub-escala {
+  font-size: 11px;
+  color: var(--muted, #64748b);
+  font-weight: 400;
+}
+.syl-rub-criterio-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+.syl-rub-criterio-item:last-child { border-bottom: none; }
+.syl-rub-criterio-lbl {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 5px;
+}
+.syl-rub-criterio-item textarea {
+  width: 100%;
+  border: 1.5px solid var(--border, #e2e8f0);
+  border-radius: var(--r-sm, 6px);
+  padding: 7px 10px;
+  font-family: var(--font, sans-serif);
+  font-size: 12.5px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  min-height: 65px;
+  transition: border-color .12s;
+  color: var(--txt, #1e293b);
+}
+.syl-rub-criterio-item textarea:focus { border-color: var(--blue, #4f46e5); }
+.syl-rub-criterio-item p {
+  font-size: 12.5px;
+  color: var(--txt, #1e293b);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ====================================================================
+   DRAWER — anchos por breakpoint
+   ==================================================================== */
+.mc-drawer,
+#inv-drawer { width: 480px; }
+
+/* ====================================================================
+   FORM GRIDS — utilidades */
+.fg-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.fg-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.fg-full { grid-column: 1 / -1; }
+
+/* ====================================================================
+   UTILIDADES RESPONSIVE
+   ==================================================================== */
+.only-mobile  { display: none !important; }
+.only-desktop { display: block !important; }
+.hide-mobile  { /* visible por defecto */ }
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.w-trunc-200 { max-width: 200px; }
+.w-trunc-280 { max-width: 280px; }
+
+/* Botones en grupo */
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Contenedores con scroll extra */
+.scroll-y-auto {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+.scroll-y-auto::-webkit-scrollbar       { width: 4px; }
+.scroll-y-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+/* ====================================================================
+   BREAKPOINT ≤ 1280px
+   ==================================================================== */
+@media (max-width: 1280px) {
+  .fg-3 { grid-template-columns: repeat(2, 1fr); }
+  .mc-drawer, #inv-drawer { width: 460px; }
+}
+
+/* ====================================================================
+   BREAKPOINT ≤ 1024px
+   ==================================================================== */
+@media (max-width: 1024px) {
+  .mc-drawer, #inv-drawer { width: 420px; }
+  .fg-3 { grid-template-columns: repeat(2, 1fr); }
+
+  /* KPI grids: 2 columnas */
+  .sinv-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .inv-kpi-grid  { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Charts: 1 columna */
+  .sinv-charts { grid-template-columns: 1fr !important; }
+  .inv-charts  { grid-template-columns: 1fr !important; }
+}
+
+/* ====================================================================
+   BREAKPOINT ≤ 768px  (tablet / móvil)
+   ==================================================================== */
+@media (max-width: 768px) {
+  /* Utilidades visibilidad */
+  .only-mobile  { display: block !important; }
+  .only-desktop { display: none  !important; }
+  .hide-mobile  { display: none  !important; }
+
+  /* Drawer: ancho completo */
+  .mc-drawer, #inv-drawer { width: 100vw !important; max-width: 100vw; }
+  .mc-drawer-footer, .inv-drawer-footer {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .mc-drawer-footer .btn,
+  .inv-drawer-footer .btn { flex: 1; min-width: 110px; justify-content: center; }
+
+  /* Form grids: 1 columna */
+  .fg-3, .fg-2  { grid-template-columns: 1fr; }
+  .fg-full      { grid-column: 1; }
+  .syl-fgrid    { grid-template-columns: 1fr !important; }
+  .syl-fgrid.col3 { grid-template-columns: 1fr !important; }
+
+  /* RÚBRICA: tabla oculta → cards visibles */
+  .syl-rub-wrap  { display: none !important; }
+  .syl-rub-cards { display: block !important; }
+
+  /* Inventario: asignatura col min-width menor */
+  .inv-table td:nth-child(3),
+  .inv-table th:nth-child(3) { min-width: 130px !important; }
+  .sinv-table td:nth-child(2),
+  .sinv-table th:nth-child(2) { min-width: 130px !important; }
+
+  /* Nav módulos (syl-mod-nav, syl-tabs): scrollable sin barra */
+  .syl-mod-nav,
+  .syl-tabs {
+    overflow-x: auto !important;
+    scrollbar-width: none;
+    flex-wrap: nowrap !important;
+  }
+  .syl-mod-nav::-webkit-scrollbar,
+  .syl-tabs::-webkit-scrollbar { display: none; }
+
+  /* Filtros inventario */
+  .sinv-filters,
+  .inv-flt {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sinv-filters select,
+  .sinv-filters input[type=search],
+  .inv-flt select,
+  .inv-flt input { width: 100%; max-width: 100%; }
+  .sinv-filter-sep,
+  .sinv-count,
+  .inv-flt-cnt { display: none; }
+
+  /* Tabs del editor microcurrículo */
+  .syl-tabs { overflow-x: auto; scrollbar-width: none; }
+  .syl-tabs::-webkit-scrollbar { display: none; }
+  .syl-tab { padding: 8px 11px; font-size: 12px; }
+
+  /* Estrategias: 1 columna */
+  .syl-est-grid { grid-template-columns: 1fr !important; }
+
+  /* Page actions en móvil */
+  .page-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .page-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Btn-row: apilar */
+  .btn-row { flex-direction: column; }
+  .btn-row .btn { width: 100%; justify-content: center; }
+
+  /* Tables en tarjetas de módulo (expediente) */
+  .card { overflow-x: auto; }
+}
+
+/* ====================================================================
+   BREAKPOINT ≤ 480px  (móvil pequeño)
+   ==================================================================== */
+@media (max-width: 480px) {
+  /* Topbar */
+  .app-topbar { padding: .5rem .75rem; gap: 8px; }
+  .topbar-title h2 { font-size: 13px; }
+
+  /* KPI/Stats: 2 columnas forzado */
+  .sinv-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 1px !important; }
+  .inv-kpi-grid  { grid-template-columns: repeat(2, 1fr) !important; }
+  .dash-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Indicadores en inventario: tamaño reducido */
+  .mc-ind { width: 18px !important; height: 18px !important; font-size: 11px !important; }
+
+  /* Toggle edición: texto más corto */
+  .inv-toggle { padding: 3px 7px; font-size: 10.5px; }
+
+  /* Rúbrica cards: ajustes de padding */
+  .syl-rub-card-hdr { padding: 8px 12px; font-size: 12.5px; }
+  .syl-rub-criterio-item { padding: 8px 12px; }
+
+  /* Header de programa */
+  .syl-hdr { padding: 12px 14px; }
+  .syl-hdr-title { font-size: 14px !important; }
+
+  /* Barra de avance editor */
+  .syl-avance { padding: 8px 12px; }
+
+  /* Page header */
+  .page-title { font-size: 16px; }
+
+  /* Formulario de identificación en editor */
+  .syl-ro-grid { gap: 8px 14px; }
+}
+
+/* ====================================================================
+   BREAKPOINT ≤ 380px  (móvil muy pequeño)
+   ==================================================================== */
+@media (max-width: 380px) {
+  .sinv-kpi-grid { grid-template-columns: 1fr 1fr !important; }
+  .container { padding: .5rem; }
+  .syl-tab { padding: 7px 9px; font-size: 11px; }
+  .mc-ind { width: 16px !important; height: 16px !important; font-size: 10px !important; }
+}
+
+/* ====================================================================
+   PRINT — ya cubierto en app.css, solo adiciones menores
+   ==================================================================== */
+@media print {
+  .mc-drawer, #inv-drawer, #inv-overlay, #mc-overlay { display: none !important; }
+  .tbl-wrap { overflow: visible; border: none; }
+  .inv-scroll, .sinv-scroll { overflow: visible; }
+}
+
+/* ====================================================================
+   ACCESIBILIDAD — Focus visible en botones de toggle
+   ==================================================================== */
+.mc-ind:focus-visible,
+.inv-toggle:focus-visible,
+.sidebar-toggle-btn:focus-visible {
+  outline: 2px solid var(--blue, #4f46e5);
+  outline-offset: 2px;
+}
+
+/* ====================================================================
+   TABLAS EN CARDS — patrón de sangrado + scroll horizontal universal
+   .tbl-wrap dentro de .card sangra hasta los bordes de la card,
+   igual que el patrón .card > table, pero con scroll horizontal.
+   ==================================================================== */
+
+/* tbl-wrap después de un card-header (caso más común) */
+.card > .tbl-wrap {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  margin: 0 -20px -20px !important;
+  width: calc(100% + 40px) !important;
+  border-top: 1px solid var(--border, #e2e8f0) !important;
+}
+
+/* tbl-wrap como primer hijo directo (sin card-header) */
+.card > .tbl-wrap:first-child {
+  margin: -20px !important;
+  width: calc(100% + 40px) !important;
+  border-top: none !important;
+}
+
+/* La tabla dentro no necesita sus propias reglas de sangrado */
+.card > .tbl-wrap > table {
+  min-width: 480px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .card > .tbl-wrap {
+    margin: 0 -14px -14px !important;
+    width: calc(100% + 28px) !important;
+  }
+  .card > .tbl-wrap:first-child {
+    margin: -14px !important;
+    width: calc(100% + 28px) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .card > .tbl-wrap {
+    margin: 0 -12px -12px !important;
+    width: calc(100% + 24px) !important;
+  }
+  .card > .tbl-wrap:first-child {
+    margin: -12px !important;
+    width: calc(100% + 24px) !important;
+  }
+}
+
+/* ====================================================================
+   TABLAS GENERALES — garantiza scroll en rango tablet (769–1024px)
+   donde el sidebar reduce el espacio disponible.
+   ==================================================================== */
+
+/* Cualquier tabla directamente en .card sin wrapper → card hace scroll */
+@media (max-width: 1024px) {
+  .card { overflow-x: auto; }
+}
+
+/* exp-layout: árbol lateral en tablet */
+@media (max-width: 960px) {
+  .exp-layout {
+    grid-template-columns: 1fr;
+  }
+  .exp-tree {
+    position: static;
+    max-height: none;
+  }
+}
+
+/* usuarios-layout: 2 cols → 1 col antes del colapso del sidebar */
+@media (max-width: 900px) {
+  .usuarios-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ====================================================================
+   TOPBAR — usuario y título en pantallas medianas
+   ==================================================================== */
+@media (max-width: 900px) {
+  .topbar-user-info { display: none; }
+}
+
+/* ====================================================================
+   DOCUMENTO INTEGRADOR — secciones con scroll horizontal
+   ==================================================================== */
+.di-sec { overflow-x: auto; }
+.di-tbl { min-width: 360px; }
+
+/* Documento vista (solo lectura) */
+.dv-sec { overflow-x: auto; }
+
+/* ====================================================================
+   CONTENEDOR PRINCIPAL — min-width garantizado para evitar layout roto
+   ==================================================================== */
+.app-content { min-width: 0; }
+.container    { min-width: 0; }
