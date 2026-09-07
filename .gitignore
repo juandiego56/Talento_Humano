@@ -1,0 +1,15 @@
+# Soportes y documentos subidos por usuarios (contienen datos sensibles)
+uploads/documentos/*
+!uploads/documentos/.gitkeep
+uploads/hojas_vida/*
+!uploads/hojas_vida/.gitkeep
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# Config local (si algún día separas credenciales de BD del repo)
+# config/database.local.php
+
+.DS_Store
+Thumbs.db

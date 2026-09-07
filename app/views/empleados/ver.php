@@ -1,9 +1,31 @@
 <div class="page-header">
   <div style="display:flex;align-items:center;gap:14px">
-    <div class="avatar-circle"><?= mb_strtoupper(mb_substr($empleado['nombres'],0,1)) ?></div>
+    <div class="avatar-wrap">
+      <div class="avatar-circle">
+        <?php if (!empty($empleado['foto_path'])): ?>
+          <img src="<?= FOTO_UPLOAD_URL ?>/<?= View::e($empleado['foto_path']) ?>" alt="Foto de <?= View::e($empleado['nombres']) ?>">
+        <?php else: ?>
+          <?= mb_strtoupper(mb_substr($empleado['nombres'],0,1)) ?>
+        <?php endif; ?>
+      </div>
+      <?php $puedeEditarFoto = Auth::puedeGestionar() || (int)(Auth::user()['empleado_id'] ?? 0) === (int)$empleado['id']; ?>
+      <?php if ($puedeEditarFoto): ?>
+        <form id="form-foto-<?= $empleado['id'] ?>" method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/foto" enctype="multipart/form-data" style="display:none">
+          <input type="file" id="input-foto-<?= $empleado['id'] ?>" name="foto" accept=".jpg,.jpeg,.png,.webp"
+                 onchange="this.form.submit()">
+        </form>
+        <button type="button" class="avatar-edit-btn" title="Cambiar foto"
+                onclick="document.getElementById('input-foto-<?= $empleado['id'] ?>').click()">✎</button>
+      <?php endif; ?>
+    </div>
     <div>
       <div class="page-title"><?= View::e($empleado['nombres'].' '.$empleado['apellidos']) ?></div>
       <div class="page-subtitle"><?= View::e($empleado['cargo'] ?? 'Sin cargo asignado') ?> · <?= View::e($empleado['area'] ?? 'Sin área') ?></div>
+      <?php if ($puedeEditarFoto && !empty($empleado['foto_path'])): ?>
+        <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/foto/eliminar" style="display:inline" onsubmit="return confirm('¿Quitar la foto de perfil?')">
+          <button type="submit" class="btn-link-sm" style="border:none;background:none;color:var(--muted);font-size:11px;cursor:pointer;padding:0;margin-top:2px">Quitar foto</button>
+        </form>
+      <?php endif; ?>
     </div>
   </div>
   <div class="page-actions">

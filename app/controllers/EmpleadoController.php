@@ -398,6 +398,90 @@ class EmpleadoController {
         exit;
     }
 
+    /** Solo el propio empleado (su cuenta) o Admin/Gestor pueden cambiar la foto. */
+    private function puedeEditarFoto(string $empleadoId): bool {
+        if (Auth::puedeGestionar()) return true;
+        return (int)(Auth::user()['empleado_id'] ?? 0) === (int)$empleadoId;
+    }
+
+    public function subirFoto(string $id): void {
+        Auth::requireAuth();
+        if (!$this->puedeEditarFoto($id)) {
+            Session::flash('error', 'No tienes permiso para cambiar esta foto.');
+            header('Location: ' . APP_URL . '/empleados/' . $id);
+            exit;
+        }
+        $this->obtenerEmpleado($id); // valida que exista
+
+        if (empty($_FILES['foto']['name'])) {
+            Session::flash('error', 'No se seleccionó ninguna imagen.');
+            header('Location: ' . APP_URL . '/empleados/' . $id);
+            exit;
+        }
+
+        $file = $_FILES['foto'];
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            Session::flash('error', 'No se pudo subir la imagen. Intenta nuevamente.');
+            header('Location: ' . APP_URL . '/empleados/' . $id);
+            exit;
+        }
+        if ($file['size'] > FOTO_MAX_SIZE) {
+            Session::flash('error', 'La imagen supera el tamaño máximo permitido (2 MB).');
+            header('Location: ' . APP_URL . '/empleados/' . $id);
+            exit;
+        }
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, FOTO_EXT_PERMITIDAS, true)) {
+            Session::flash('error', 'Formato no permitido. Usa JPG, PNG o WEBP.');
+            header('Location: ' . APP_URL . '/empleados/' . $id);
+            exit;
+        }
+
+        if (!is_dir(FOTO_UPLOAD_DIR)) mkdir(FOTO_UPLOAD_DIR, 0775, true);
+
+        // Borra la foto anterior si existía
+        $anterior = DB::fetch("SELECT foto_path FROM empleados WHERE id = ?", [$id]);
+        if ($anterior && $anterior['foto_path']) {
+            $rutaAnterior = FOTO_UPLOAD_DIR . '/' . $anterior['foto_path'];
+            if (is_file($rutaAnterior)) @unlink($rutaAnterior);
+        }
+
+        $nombreArchivo = 'empleado_' . $id . '_' . time() . '.' . $ext;
+        $rutaCompleta  = FOTO_UPLOAD_DIR . '/' . $nombreArchivo;
+
+        if (!move_uploaded_file($file['tmp_name'], $rutaCompleta)) {
+            Session::flash('error', 'Error al guardar la imagen en el servidor.');
+            header('Location: ' . APP_URL . '/empleados/' . $id);
+            exit;
+        }
+
+        DB::execute("UPDATE empleados SET foto_path = ? WHERE id = ?", [$nombreArchivo, $id]);
+
+        Session::flash('success', 'Foto de perfil actualizada.');
+        header('Location: ' . APP_URL . '/empleados/' . $id);
+        exit;
+    }
+
+    public function eliminarFoto(string $id): void {
+        Auth::requireAuth();
+        if (!$this->puedeEditarFoto($id)) {
+            Session::flash('error', 'No tienes permiso para cambiar esta foto.');
+            header('Location: ' . APP_URL . '/empleados/' . $id);
+            exit;
+        }
+
+        $reg = DB::fetch("SELECT foto_path FROM empleados WHERE id = ?", [$id]);
+        if ($reg && $reg['foto_path']) {
+            $rutaCompleta = FOTO_UPLOAD_DIR . '/' . $reg['foto_path'];
+            if (is_file($rutaCompleta)) @unlink($rutaCompleta);
+        }
+        DB::execute("UPDATE empleados SET foto_path = NULL WHERE id = ?", [$id]);
+
+        Session::flash('success', 'Foto de perfil eliminada.');
+        header('Location: ' . APP_URL . '/empleados/' . $id);
+        exit;
+    }
+
     public function guardarFirmaChecklist(string $id): void {
         Auth::requireGestion();
         DB::execute("
@@ -446,10 +530,12 @@ class EmpleadoController {
 
     private function obtenerEmpleado(string $id): array {
         $empleado = DB::fetch("
-            SELECT e.*, c.nombre AS cargo, a.nombre AS area
+            SELECT e.*, c.nombre AS cargo, a.nombre AS area,
+                   COALESCE(u.foto_path, e.foto_path) AS foto_path
             FROM empleados e
             LEFT JOIN cargos c ON c.id = e.cargo_id
             LEFT JOIN areas  a ON a.id = e.area_id
+            LEFT JOIN usuarios u ON u.empleado_id = e.id
             WHERE e.id = ?
         ", [$id]);
         if (!$empleado) {

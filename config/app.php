@@ -32,3 +32,9 @@ date_default_timezone_set(TIMEZONE);
 define('CHECKLIST_UPLOAD_DIR', ROOT . '/uploads/documentos'); // fuera de /public: no accesible directo por URL
 define('CHECKLIST_MAX_SIZE',   5 * 1024 * 1024);              // 5 MB por archivo
 define('CHECKLIST_EXT_PERMITIDAS', ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']);
+
+// ── Foto de perfil del empleado/usuario ─────────────────────────
+define('FOTO_UPLOAD_DIR', ROOT . '/public/uploads/fotos'); // dentro de /public: sí es accesible por URL (no es info sensible)
+define('FOTO_UPLOAD_URL', APP_URL . '/uploads/fotos');
+define('FOTO_MAX_SIZE',   2 * 1024 * 1024); // 2 MB
+define('FOTO_EXT_PERMITIDAS', ['jpg', 'jpeg', 'png', 'webp']);

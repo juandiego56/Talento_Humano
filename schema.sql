@@ -234,6 +234,7 @@ CREATE TABLE usuarios (
   rol_id          TINYINT NOT NULL COMMENT '1=Admin, 2=Gestor TH, 3=Empleado',
   empleado_id     INT NULL,
   activo          TINYINT(1) NOT NULL DEFAULT 1,
+  foto_path       VARCHAR(255) NULL,
   created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;

@@ -31,6 +31,12 @@ class Router {
             '#^empleados/(\d+)/checklist/firma$#'                      => ['EmpleadoController', 'guardarFirmaChecklist'],
             '#^empleados/(\d+)/checklist/documento/(\d+)/archivo$#'    => ['EmpleadoController', 'verArchivoChecklist'],
             '#^empleados/(\d+)/checklist/documento/(\d+)/eliminar-archivo$#' => ['EmpleadoController', 'eliminarArchivoChecklist'],
+            '#^empleados/(\d+)/foto$#'                                 => ['EmpleadoController', 'subirFoto'],
+            '#^empleados/(\d+)/foto/eliminar$#'                        => ['EmpleadoController', 'eliminarFoto'],
+
+            '#^mi-perfil$#'                                            => ['PerfilController', 'ver'],
+            '#^mi-perfil/foto$#'                                       => ['PerfilController', 'subirFoto'],
+            '#^mi-perfil/foto/eliminar$#'                              => ['PerfilController', 'eliminarFoto'],
 
             '#^empleados/(\d+)/entrevista$#'                           => ['EntrevistaController', 'ver'],
             '#^empleados/(\d+)/entrevista/editar$#'                    => ['EntrevistaController', 'formulario'],

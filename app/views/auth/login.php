@@ -127,7 +127,7 @@
     <div class="lg-wordmark">Talento<br>Humano</div>
 
     <div class="lg-widget">
-      <span>📨</span>
+      <span>📁</span>
       <div class="lg-widget-bars"><i></i><i></i><i></i><i></i></div>
     </div>
 

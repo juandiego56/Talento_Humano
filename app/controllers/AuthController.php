@@ -34,6 +34,7 @@ class AuthController {
             'rol_id'     => (int)$usuario['rol_id'],
             'rol_nombre' => View::rolLabel((int)$usuario['rol_id']),
             'empleado_id'=> $usuario['empleado_id'] ? (int)$usuario['empleado_id'] : null,
+            'foto_path'  => $usuario['foto_path'],
         ]);
 
         header('Location: ' . APP_URL . '/');
