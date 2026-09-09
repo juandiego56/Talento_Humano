@@ -30,6 +30,7 @@
   </div>
   <div class="page-actions">
     <a href="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/hojavida" class="btn btn-outline" target="_blank">📄 Hoja de vida</a>
+    <button type="button" class="btn btn-outline" onclick="sgthCopiarEnlace(this)" data-url="<?= View::e(rtrim(APP_URL, '/')) ?>/empleados/<?= $empleado['id'] ?>/diligenciar">🔗 Copiar enlace</button>
     <a href="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/entrevista" class="btn btn-outline">🗣️ Entrevista</a>
     <a href="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/entrevista-docente" class="btn btn-outline">🎓 Entrevista docente</a>
     <a href="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/checklist" class="btn btn-outline">📋 Lista de chequeo</a>
@@ -41,22 +42,18 @@
 
 <div class="stats-grid">
   <div class="stat-card stat-personal">
-    <span class="stat-icon">🏷️</span>
     <div class="stat-num" style="font-size:16px"><span class="badge <?= View::estadoEmpleadoBadge($empleado['estado']) ?>"><?= View::estadoEmpleadoLabel($empleado['estado']) ?></span></div>
     <div class="stat-label">Estado laboral</div>
   </div>
   <div class="stat-card stat-nomina">
-    <span class="stat-icon">💵</span>
     <div class="stat-num" style="font-size:20px"><?= View::money($empleado['salario_base']) ?></div>
     <div class="stat-label">Salario básico</div>
   </div>
   <div class="stat-card stat-checklist">
-    <span class="stat-icon">📋</span>
     <div class="stat-num"><?= (float)($checklist['pct_completitud'] ?? 0) ?>%</div>
     <div class="stat-label">Lista de chequeo (<?= (int)($checklist['entregados'] ?? 0) ?>/<?= (int)($checklist['total_documentos'] ?? 0) ?>)</div>
   </div>
   <div class="stat-card stat-bienestar">
-    <span class="stat-icon">🎉</span>
     <div class="stat-num"><?= count($actividades) ?></div>
     <div class="stat-label">Actividades de bienestar</div>
   </div>
@@ -83,7 +80,20 @@
 <div class="form-row" style="align-items:start">
 
   <div class="card">
-    <div class="card-header"><div class="card-title">Formación académica</div></div>
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div class="card-title">Formación académica</div>
+      <?php if (Auth::puedeGestionar()): ?>
+        <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/educacion/convalidacion" style="display:inline">
+          <button type="submit" class="btn btn-sm <?= !empty($empleado['formacion_convalidada']) ? 'btn-primary' : 'btn-outline' ?>">
+            <?= !empty($empleado['formacion_convalidada']) ? '✅ Convalidado' : '⏳ No convalidado' ?>
+          </button>
+        </form>
+      <?php else: ?>
+        <span class="badge <?= !empty($empleado['formacion_convalidada']) ? 'badge-aprobado' : 'badge-borrador' ?>">
+          <?= !empty($empleado['formacion_convalidada']) ? '✅ Convalidado' : '⏳ No convalidado' ?>
+        </span>
+      <?php endif; ?>
+    </div>
     <?php if ($educacion): foreach ($educacion as $ed): ?>
       <div class="hoja-entry">
         <div class="hoja-entry-title"><?= View::nivelEducativoLabel($ed['nivel_educativo']) ?> — <?= View::e($ed['titulo_obtenido'] ?: '') ?></div>
@@ -208,3 +218,16 @@
   </form>
 </div>
 <?php endif; ?>
+
+<script>
+function sgthCopiarEnlace(btn) {
+  const url = btn.getAttribute('data-url');
+  const textoOriginal = btn.textContent;
+  navigator.clipboard.writeText(url).then(function () {
+    btn.textContent = '✅ Enlace copiado';
+    setTimeout(function () { btn.textContent = textoOriginal; }, 2000);
+  }).catch(function () {
+    window.prompt('Copia el enlace manualmente:', url);
+  });
+}
+</script>

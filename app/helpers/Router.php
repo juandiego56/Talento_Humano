@@ -23,6 +23,7 @@ class Router {
             '#^empleados/(\d+)/hojavida$#'                    => ['EmpleadoController', 'hojaVida'],
             '#^empleados/(\d+)/educacion/guardar$#'           => ['EmpleadoController', 'guardarEducacion'],
             '#^empleados/(\d+)/educacion/(\d+)/eliminar$#'    => ['EmpleadoController', 'eliminarEducacion'],
+            '#^empleados/(\d+)/educacion/convalidacion$#'     => ['EmpleadoController', 'toggleConvalidacion'],
             '#^empleados/(\d+)/experiencia/guardar$#'         => ['EmpleadoController', 'guardarExperiencia'],
             '#^empleados/(\d+)/experiencia/(\d+)/eliminar$#'  => ['EmpleadoController', 'eliminarExperiencia'],
             '#^empleados/(\d+)/checklist$#'                            => ['EmpleadoController', 'checklist'],
@@ -92,6 +93,12 @@ class Router {
             '#^catalogos/area/(\d+)/eliminar$#'               => ['CatalogoController', 'eliminarArea'],
             '#^catalogos/cargo/guardar$#'                     => ['CatalogoController', 'guardarCargo'],
             '#^catalogos/cargo/(\d+)/eliminar$#'              => ['CatalogoController', 'eliminarCargo'],
+
+            // ── Formulario público de hoja de vida (sin sesión) ─────────
+            '#^hoja-de-vida/nueva$#'                          => ['PublicHojaVidaController', 'formulario'],
+            '#^hoja-de-vida/guardar$#'                        => ['PublicHojaVidaController', 'guardar'],
+            '#^empleados/(\d+)/diligenciar$#'                 => ['PublicHojaVidaController', 'formularioEmpleado'],
+            '#^empleados/(\d+)/diligenciar/guardar$#'         => ['PublicHojaVidaController', 'guardarEmpleado'],
         ];
     }
 

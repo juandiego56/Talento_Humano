@@ -206,6 +206,16 @@ class EmpleadoController {
         exit;
     }
 
+    public function toggleConvalidacion(string $id): void {
+        Auth::requireGestion();
+        DB::execute(
+            "UPDATE empleados SET formacion_convalidada = IF(formacion_convalidada = 1, 0, 1) WHERE id = ?",
+            [$id]
+        );
+        header('Location: ' . APP_URL . '/empleados/' . $id);
+        exit;
+    }
+
     public function guardarExperiencia(string $id): void {
         Auth::requireGestion();
         DB::insert("
@@ -213,13 +223,6 @@ class EmpleadoController {
             VALUES (?,?,?,?,?,?)
         ", [$id, $_POST['empresa'], $_POST['cargo'], ($_POST['fecha_inicio'] ?? '') ?: null, ($_POST['fecha_fin'] ?? '') ?: null, ($_POST['funciones'] ?? '') ?: null]);
         Session::flash('success', 'Experiencia laboral agregada.');
-        header('Location: ' . APP_URL . '/empleados/' . $id);
-        exit;
-    }
-
-    public function eliminarExperiencia(string $id, string $expId): void {
-        Auth::requireGestion();
-        DB::execute("DELETE FROM empleado_experiencia WHERE id = ? AND empleado_id = ?", [$expId, $id]);
         header('Location: ' . APP_URL . '/empleados/' . $id);
         exit;
     }
