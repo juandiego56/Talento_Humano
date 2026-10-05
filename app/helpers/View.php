@@ -31,21 +31,31 @@ class View {
         return $t ? date('d/m/Y', $t) : '—';
     }
 
+    /** Ícono SVG inline (check o reloj) para el estado de convalidación de formación académica. */
+    public static function convalidadaIcon(bool $convalidada): string {
+        $path = $convalidada
+            ? '<circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75"/>'
+            : '<circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3.5 2"/>';
+        return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:11px;height:11px;vertical-align:-1px">'.$path.'</svg>';
+    }
+
     public static function rolLabel(int $rol): string {
         return match($rol) {
-            ROL_ADMIN    => 'Administrador',
-            ROL_GESTOR   => 'Gestor de Talento Humano',
-            ROL_EMPLEADO => 'Empleado',
-            default      => 'Desconocido',
+            ROL_ADMIN             => 'Administrador',
+            ROL_GESTOR            => 'Gestor de Talento Humano',
+            ROL_EMPLEADO          => 'Empleado',
+            ROL_DIRECTOR_PROGRAMA => 'Director de Programa',
+            default               => 'Desconocido',
         };
     }
 
     public static function rolBadgeClass(int $rol): string {
         return match($rol) {
-            ROL_ADMIN    => 'badge-siac',
-            ROL_GESTOR   => 'badge-coordinador',
-            ROL_EMPLEADO => 'badge-vicerrectoria',
-            default      => '',
+            ROL_ADMIN             => 'badge-siac',
+            ROL_GESTOR            => 'badge-coordinador',
+            ROL_EMPLEADO          => 'badge-vicerrectoria',
+            ROL_DIRECTOR_PROGRAMA => 'badge-generado',
+            default               => '',
         };
     }
 
@@ -90,6 +100,11 @@ class View {
         };
     }
 
+    /** Igual que nivelEducativoLabel() pero tolera null/vacío (empleados sin nivel de formación registrado). */
+    public static function nivelEducativoLabelOrVacio(?string $n): string {
+        return $n ? self::nivelEducativoLabel($n) : '';
+    }
+
     public static function estadoNominaLabel(string $e): string {
         return match($e) {
             'borrador' => 'Borrador',
@@ -103,7 +118,7 @@ class View {
         return match($e) {
             'borrador' => 'badge-en-revision',
             'pagada'   => 'badge-aprobado',
-            'anulada'  => 'badge-borrador',
+            'anulada'  => 'badge-rechazado',
             default    => '',
         };
     }
@@ -148,6 +163,22 @@ class View {
         return ($meses[(int)$m] ?? $m) . ' ' . $y;
     }
 
+    /** Sugiere el corte académico (semestre) a partir de un periodo 'YYYY-MM'. Ej. '2025-07' -> '2025-2'. */
+    public static function corteAcademicoSugerido(string $periodo): string {
+        [$y, $m] = array_pad(explode('-', $periodo), 2, null);
+        if (!$y || !$m) return '';
+        return $y . '-' . ((int)$m <= 6 ? '1' : '2');
+    }
+
+    /** 'YYYY-N' -> 'Primer/Segundo semestre YYYY' */
+    public static function corteAcademicoLabel(?string $corte): string {
+        if (!$corte) return '—';
+        [$y, $s] = array_pad(explode('-', $corte), 2, null);
+        if (!$y || !$s) return $corte;
+        $semestre = (int)$s === 1 ? 'Primer semestre' : (((int)$s === 2) ? 'Segundo semestre' : "Semestre $s");
+        return "$semestre $y ($corte)";
+    }
+
     public static function siNoLabel(?string $v): string {
         return match($v) {
             'si' => 'SI',
@@ -188,5 +219,30 @@ class View {
             'hora_catedra'    => 'Docente Hora Cátedra',
             default           => '—',
         };
+    }
+
+    public static function estadoSolicitudLabel(string $e): string {
+        return match($e) {
+            'pendiente' => 'Pendiente',
+            'aprobada'  => 'Aprobada',
+            'rechazada' => 'Rechazada',
+            default     => ucfirst($e),
+        };
+    }
+
+    public static function estadoSolicitudBadge(string $e): string {
+        return match($e) {
+            'pendiente' => 'badge-en-revision',
+            'aprobada'  => 'badge-aprobado',
+            'rechazada' => 'badge-rechazado',
+            default     => '',
+        };
+    }
+
+    public static function arlNivelRiesgoLabel(?int $nivel): string {
+        $romano = match((int)$nivel) {
+            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', default => null,
+        };
+        return $romano ? "Riesgo $romano" : '—';
     }
 }

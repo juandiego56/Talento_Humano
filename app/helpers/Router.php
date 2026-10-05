@@ -11,6 +11,8 @@ class Router {
             '#^auth/login$#'                                  => ['AuthController', 'loginForm'],
             '#^auth/procesar$#'                                => ['AuthController', 'procesar'],
             '#^auth/logout$#'                                 => ['AuthController', 'logout'],
+            '#^auth/recuperar$#'                              => ['AuthController', 'recuperarForm'],
+            '#^auth/recuperar/enviar$#'                       => ['AuthController', 'recuperarEnviar'],
 
             // ── Módulo 1: Administración de Personal ───────────────────
             '#^empleados$#'                                   => ['EmpleadoController', 'index'],
@@ -54,10 +56,16 @@ class Router {
             '#^documentos$#'                                  => ['DocumentoController', 'index'],
             '#^documentos/guardar$#'                          => ['DocumentoController', 'guardar'],
             '#^documentos/(\d+)/eliminar$#'                   => ['DocumentoController', 'eliminar'],
+            '#^documentos/(\d+)/reactivar$#'                  => ['DocumentoController', 'reactivar'],
+
+            '#^verificacion$#'                                => ['VerificacionController', 'index'],
+            '#^verificacion/(\d+)/(\d+)$#'                    => ['VerificacionController', 'ver'],
+            '#^verificacion/(\d+)/(\d+)/accion$#'             => ['VerificacionController', 'accion'],
 
             // ── Módulo 2: Nómina ────────────────────────────────────────
             '#^nomina$#'                                      => ['NominaController', 'index'],
             '#^nomina/calculadora$#'                          => ['NominaController', 'calculadora'],
+            '#^nomina/horas-extra$#'                          => ['NominaController', 'reporteHorasExtra'],
             '#^nomina/generar$#'                              => ['NominaController', 'generar'],
             '#^nomina/(\d+)$#'                                => ['NominaController', 'ver'],
             '#^nomina/(\d+)/pagar$#'                          => ['NominaController', 'pagar'],
@@ -71,6 +79,20 @@ class Router {
             '#^conceptos/guardar$#'                           => ['ConceptoController', 'guardar'],
             '#^conceptos/(\d+)/eliminar$#'                    => ['ConceptoController', 'eliminar'],
 
+            // ── Reportes ──────────────────────────────────────────────
+            '#^reportes$#'                                    => ['ReporteController', 'index'],
+            '#^reportes/exportar/csv$#'                       => ['ReporteController', 'exportarCsv'],
+            '#^reportes/exportar/excel$#'                     => ['ReporteController', 'exportarExcel'],
+            '#^reportes/exportar/pdf$#'                       => ['ReporteController', 'exportarPdf'],
+
+            // ── Solicitudes de Vinculación Laboral ───────────────────────
+            '#^solicitudes-vinculacion$#'                     => ['SolicitudVinculacionController', 'index'],
+            '#^solicitudes-vinculacion/crear$#'               => ['SolicitudVinculacionController', 'crear'],
+            '#^solicitudes-vinculacion/guardar$#'             => ['SolicitudVinculacionController', 'guardar'],
+            '#^solicitudes-vinculacion/(\d+)$#'               => ['SolicitudVinculacionController', 'ver'],
+            '#^solicitudes-vinculacion/(\d+)/aprobar$#'       => ['SolicitudVinculacionController', 'aprobar'],
+            '#^solicitudes-vinculacion/(\d+)/rechazar$#'      => ['SolicitudVinculacionController', 'rechazar'],
+
             // ── Módulo 3: Bienestar Laboral ─────────────────────────────
             '#^bienestar$#'                                   => ['BienestarController', 'index'],
             '#^bienestar/crear$#'                             => ['BienestarController', 'crear'],
@@ -82,17 +104,26 @@ class Router {
             '#^bienestar/(\d+)/inscribir$#'                   => ['BienestarController', 'inscribir'],
             '#^bienestar/(\d+)/inscripcion/(\d+)/asistio$#'   => ['BienestarController', 'marcarAsistio'],
             '#^bienestar/(\d+)/inscripcion/(\d+)/eliminar$#'  => ['BienestarController', 'eliminarInscripcion'],
+            '#^bienestar/(\d+)/qr/regenerar$#'                => ['BienestarController', 'regenerarQr'],
+            '#^bienestar/checkin/([a-f0-9]+)$#'               => ['BienestarController', 'checkin'],
+            '#^bienestar/checkin/([a-f0-9]+)/registrar$#'     => ['BienestarController', 'checkinRegistrar'],
 
             // ── Sistema ──────────────────────────────────────────────────
             '#^usuarios$#'                                    => ['UsuarioController', 'index'],
             '#^usuarios/guardar$#'                            => ['UsuarioController', 'guardar'],
             '#^usuarios/(\d+)/eliminar$#'                     => ['UsuarioController', 'eliminar'],
+            '#^usuarios/(\d+)/restablecer-password$#'         => ['UsuarioController', 'restablecerPassword'],
 
             '#^catalogos$#'                                   => ['CatalogoController', 'index'],
             '#^catalogos/area/guardar$#'                      => ['CatalogoController', 'guardarArea'],
             '#^catalogos/area/(\d+)/eliminar$#'               => ['CatalogoController', 'eliminarArea'],
             '#^catalogos/cargo/guardar$#'                     => ['CatalogoController', 'guardarCargo'],
             '#^catalogos/cargo/(\d+)/eliminar$#'              => ['CatalogoController', 'eliminarCargo'],
+            '#^catalogos/programa/guardar$#'                  => ['CatalogoController', 'guardarPrograma'],
+            '#^catalogos/programa/(\d+)/eliminar$#'           => ['CatalogoController', 'eliminarPrograma'],
+            '#^catalogos/escalafon/guardar$#'                 => ['CatalogoController', 'guardarEscalafon'],
+            '#^catalogos/escalafon/(\d+)/eliminar$#'          => ['CatalogoController', 'eliminarEscalafon'],
+            '#^catalogos/arl/(\d+)/actualizar$#'              => ['CatalogoController', 'actualizarNivelArl'],
 
             // ── Formulario público de hoja de vida (sin sesión) ─────────
             '#^hoja-de-vida/nueva$#'                          => ['PublicHojaVidaController', 'formulario'],
@@ -128,9 +159,9 @@ class Router {
     private function notFound(): void {
         http_response_code(404);
         echo '<div style="font-family:sans-serif;padding:40px;max-width:500px;margin:80px auto">
-              <h1 style="color:#1e3a5f">404</h1>
+              <h1 style="color:#0a2540">404</h1>
               <p style="color:#666">Página no encontrada.</p>
-              <a href="' . APP_URL . '/" style="color:#4f46e5">← Volver al inicio</a>
+              <a href="' . APP_URL . '/" style="color:#1c5fa8">← Volver al inicio</a>
               </div>';
     }
 }

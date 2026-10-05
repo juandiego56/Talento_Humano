@@ -6,166 +6,210 @@
 <title>Iniciar sesión — <?= APP_NAME ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
 <style>
+  :root{
+    --navy:#0a2540; --navy-d:#071a2e; --blue:#1c5fa8; --blue-l:#3f7fc4; --field-bg:#e8f1fa;
+    --teal:#2dd4bf; --teal-h:#14b8a6;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #ffffff;
-    min-height: 100vh;
-  }
+  body { font-family: 'Lato', sans-serif; background:#fff; min-height:100vh; }
 
-  .lg-screen { display: flex; flex-direction: column; min-height: 100vh; }
+  .lg-screen { display:flex; min-height:100vh; }
 
-  /* Barra superior */
-  .lg-topbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 22px clamp(20px, 3.5vw, 48px);
-    border-bottom: 1px solid #e2e8f0;
-    background: #ffffff;
+  /* ===== Panel izquierdo (foto institucional) ===== */
+  .lg-left { position:relative; flex:1 1 52%; min-height:100vh; overflow:hidden; display:flex; align-items:center; }
+  .lg-photo { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .lg-overlay {
+    position:absolute; inset:0;
+    background: linear-gradient(160deg, rgba(10,37,64,.90) 0%, rgba(10,37,64,.62) 42%, rgba(28,95,168,.48) 100%);
   }
-  .lg-logo { font-size: 13px; font-weight: 700; letter-spacing: .04em; color: #1e3a8a; }
-  .lg-nav { display: flex; gap: 26px; font-size: 12.5px; color: #64748b; }
-  .lg-nav span:hover { color: #1e3a8a; }
-  .lg-topbar-note { font-size: 12px; color: #94a3b8; }
+  .lg-content { position:relative; z-index:1; width:100%; padding: clamp(32px,5vw,76px); color:#fff; }
 
-  /* Hero claro */
-  .lg-hero {
-    position: relative; flex: 1; overflow: hidden;
-    display: flex; align-items: flex-end;
-    background:
-      radial-gradient(45% 45% at 18% 20%, #dbeafe 0%, transparent 65%),
-      radial-gradient(40% 35% at 82% 12%, #e0e7ff 0%, transparent 65%),
-      radial-gradient(55% 50% at 55% 100%, #eff6ff 0%, transparent 65%),
-      #ffffff;
-  }
+  .lg-brand { display:flex; align-items:center; gap:13px; margin-bottom: clamp(46px,10vh,100px); }
+  .lg-brand img { width:44px; height:44px; filter:brightness(0) invert(1); }
+  .lg-brand-name { font-size:15.5px; font-weight:700; line-height:1.3; }
+  .lg-brand-sub  { font-size:11.5px; color:rgba(255,255,255,.7); font-weight:400; }
 
-  .lg-wordmark {
-    position: absolute; top: clamp(24px, 5vh, 52px); right: clamp(20px, 4vw, 56px);
-    font-family: 'Fraunces', serif; font-weight: 500; font-size: clamp(28px, 3.6vw, 42px);
-    color: #1e3a8a; line-height: 1; text-align: right;
-  }
+  .lg-eyebrow { font-size:11px; letter-spacing:.18em; color:var(--teal); font-weight:700; margin-bottom:10px; text-transform:uppercase; }
+  .lg-script { font-family:'Lato', sans-serif; font-weight:900; font-size:clamp(36px,4.6vw,54px); line-height:1.08; color:#fff; text-shadow:0 4px 24px rgba(0,0,0,.18); }
+  .lg-sub { font-weight:600; font-size:clamp(18px,2vw,23px); color:#cfe6fb; margin:4px 0 18px; }
+  .lg-desc { font-size:14px; font-weight:400; color:rgba(255,255,255,.82); line-height:1.65; max-width:360px; }
 
-  .lg-widget {
-    position: absolute; top: clamp(70px, 12vh, 120px); left: clamp(20px, 4vw, 56px);
-    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px;
-    padding: 12px 16px; display: flex; align-items: center; gap: 10px;
-    box-shadow: 0 10px 26px rgba(30,58,138,.08);
-  }
-  .lg-widget-bars { display: flex; align-items: flex-end; gap: 3px; height: 16px; }
-  .lg-widget-bars i { display: block; width: 3px; background: #3b82f6; border-radius: 2px; }
-  .lg-widget-bars i:nth-child(1) { height: 40%; }
-  .lg-widget-bars i:nth-child(2) { height: 100%; }
-  .lg-widget-bars i:nth-child(3) { height: 65%; }
-  .lg-widget-bars i:nth-child(4) { height: 80%; }
+  /* ===== Panel derecho (formulario) ===== */
+  .lg-right { flex:1 1 48%; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#fff; padding: clamp(24px,4vw,48px); }
+  .lg-form-wrap { width:100%; max-width:392px; }
 
-  .lg-content {
-    position: relative; width: 100%;
-    padding: 0 clamp(20px, 4vw, 56px) clamp(56px, 9vh, 90px);
-  }
-  .lg-eyebrow { font-size: 11px; letter-spacing: .16em; color: #3b82f6; margin-bottom: 16px; font-weight: 600; }
-  .lg-headline {
-    font-family: 'Fraunces', serif; font-weight: 400; color: #1e3a8a;
-    font-size: clamp(26px, 4vw, 44px); line-height: 1.16; letter-spacing: -.01em;
-    max-width: 16ch; margin-bottom: 32px;
-  }
+  .lg-logo-center { display:flex; justify-content:center; margin-bottom:20px; }
+  .lg-logo-center img { width:72px; height:72px; }
 
-  .lg-error {
-    max-width: 460px; margin-bottom: 16px; padding: 10px 14px; border-radius: 8px;
-    background: #fee2e2; color: #991b1b; font-size: 13px; border-left: 3px solid #dc2626;
-  }
+  .lg-title { font-weight:800; font-size:25px; color:var(--navy); text-align:center; margin-bottom:6px; letter-spacing:-.01em; }
+  .lg-subtitle { font-size:13.5px; color:#64748b; text-align:center; margin-bottom:26px; line-height:1.5; }
 
-  .lg-form { max-width: 460px; }
-  .lg-form-row { display: flex; flex-wrap: wrap; gap: 22px 28px; margin-bottom: 6px; }
-  .lg-field { flex: 1 1 180px; min-width: 0; }
-  .lg-field label { display: block; font-size: 10.5px; letter-spacing: .06em; color: #64748b; margin-bottom: 6px; font-weight: 600; }
+  .lg-error, .lg-success {
+    margin-bottom:16px; padding:10px 13px; border-radius:9px;
+    font-size:12.5px; line-height:1.5; border-left:3px solid;
+    display:flex; align-items:flex-start; gap:8px;
+  }
+  .lg-error   { background:#fee2e2; color:#991b1b; border-left-color:#dc2626; }
+  .lg-success { background:#e0f2fe; color:#075985; border-left-color:#0284c7; }
+  .lg-error svg, .lg-success svg { width:15px; height:15px; flex-shrink:0; margin-top:1px; }
+
+  .lg-field { margin-bottom:16px; }
+  .lg-field label { display:block; font-size:12.5px; font-weight:600; color:#334155; margin-bottom:6px; }
+  .lg-input-wrap { position:relative; display:flex; align-items:center; }
+  .lg-input-wrap svg.lg-ic {
+    position:absolute; left:14px; width:17px; height:17px; color:#7391b5; pointer-events:none;
+    transition: color .15s ease;
+  }
+  .lg-input-wrap:focus-within svg.lg-ic { color:var(--blue); }
   .lg-field input {
-    width: 100%; border: none; border-bottom: 1.5px solid #cbd5e1; background: transparent;
-    padding: 4px 2px 8px; font-family: 'Inter', sans-serif; font-size: 14.5px; color: #1e293b;
-    outline: none;
+    width:100%; border:1.5px solid transparent; border-radius:11px; background:var(--field-bg);
+    padding:12px 14px 12px 42px; font-family:'Lato',sans-serif; font-size:13.5px; color:#1e293b; outline:none;
+    transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;
   }
-  .lg-field input:focus { border-bottom-color: #3b82f6; }
-  .lg-field input::placeholder { color: #94a3b8; }
+  .lg-field input:focus { border-color:var(--blue); background:#fff; box-shadow:0 0 0 3px rgba(28,95,168,.14); }
+  .lg-field input::placeholder { color:#8ba3c2; }
+  .lg-field.has-toggle input { padding-right:42px; }
+  .lg-eye-toggle {
+    position:absolute; right:12px; background:none; border:none; cursor:pointer; padding:4px;
+    display:flex; align-items:center; color:#7391b5;
+  }
+  .lg-eye-toggle:hover { color:var(--blue); }
+  .lg-eye-toggle svg { width:17px; height:17px; }
 
   .lg-submit {
-    display: inline-flex; align-items: center; gap: 12px; margin-top: 28px;
-    background: none; border: none; cursor: pointer; padding: 0;
+    width:100%; margin-top:6px; background:var(--navy); color:#fff; border:none; border-radius:11px;
+    padding:13px; font-family:'Lato',sans-serif; font-size:14.5px; font-weight:700; cursor:pointer;
+    box-shadow:0 8px 18px rgba(10,37,64,.22); transition: background .15s ease, box-shadow .15s ease, opacity .15s ease;
   }
-  .lg-submit-circle {
-    width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
-    background: #1e3a8a;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 8px 18px rgba(30,58,138,.3);
-  }
-  .lg-submit-label { font-size: 13.5px; font-weight: 600; color: #1e3a8a; }
+  .lg-submit:hover { background: var(--navy-d); }
+  .lg-submit:disabled { opacity:.75; cursor:default; }
 
-  .lg-testusers { margin-top: 24px; font-size: 11px; color: #94a3b8; line-height: 1.7; }
-  .lg-testusers strong { color: #64748b; }
+  .lg-help-line { text-align:center; font-size:12.5px; color:#64748b; margin-top:16px; line-height:1.6; }
+  .lg-help-line a { color:var(--teal-h); font-weight:700; text-decoration:none; }
+  .lg-help-line a:hover { color:var(--teal); text-decoration:underline; }
 
-  @media (max-width: 720px) {
-    .lg-nav, .lg-widget { display: none; }
-    .lg-wordmark { position: static; text-align: left; margin: 20px clamp(20px, 4vw, 56px) 0; }
-    .lg-hero { align-items: flex-start; }
-    .lg-content { padding-top: 4px; }
+  .lg-divider { display:flex; align-items:center; gap:12px; margin:22px 0 16px; }
+  .lg-divider::before, .lg-divider::after { content:''; flex:1; height:1px; background:#e6ecf3; }
+  .lg-divider span { font-size:10px; color:#a3b1c2; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+
+  .lg-testusers { font-size:11px; color:#94a3b8; line-height:1.7; text-align:center; }
+  .lg-testusers strong { color:#64748b; }
+
+  .lg-footer { text-align:center; font-size:11.5px; color:#a3b1c2; margin-top:26px; }
+
+  @media (max-width: 880px) {
+    .lg-left { display:none; }
+    .lg-right { flex:1 1 100%; }
   }
 </style>
 </head>
 <body>
 <div class="lg-screen">
 
-  <div class="lg-topbar">
-    <div class="lg-logo">SGTH</div>
-    <nav class="lg-nav">
-      <span>Personal</span>
-      <span>Nómina</span>
-      <span>Bienestar</span>
-    </nav>
-    <div class="lg-topbar-note">Plataforma institucional</div>
+  <div class="lg-left">
+    <img class="lg-photo" src="<?= APP_URL ?>/assets/img/login-banner-photo.jpg" alt="">
+    <div class="lg-overlay"></div>
+    <div class="lg-content">
+      <div class="lg-brand">
+        <img src="<?= APP_URL ?>/assets/logo.png" alt="">
+        <div>
+          <div class="lg-brand-name">Fundación Universitaria</div>
+          <div class="lg-brand-sub">De Popayán</div>
+        </div>
+      </div>
+
+      <div class="lg-eyebrow">Sistema de gestión de</div>
+      <div class="lg-script">Talento Humano</div>
+      <div class="lg-sub">de tu institución</div>
+      <p class="lg-desc">Administración de personal, nómina y bienestar institucional desde un solo lugar.</p>
+    </div>
   </div>
 
-  <div class="lg-hero">
-    <div class="lg-wordmark">Talento<br>Humano</div>
-
-    <div class="lg-widget">
-      <span>📨</span>
-      <div class="lg-widget-bars"><i></i><i></i><i></i><i></i></div>
-    </div>
-
-    <div class="lg-content">
-      <div class="lg-eyebrow">· ACCESO AL SISTEMA ·</div>
-      <h1 class="lg-headline">Bienvenido de nuevo. Gestiona el talento humano de tu institución.</h1>
+  <div class="lg-right">
+    <div class="lg-form-wrap">
+      <div class="lg-logo-center">
+        <img src="<?= APP_URL ?>/assets/logo.png" alt="Fundación Universitaria de Popayán">
+      </div>
+      <h1 class="lg-title">¡Bienvenido de nuevo!</h1>
+      <p class="lg-subtitle">Ingresa tus credenciales para acceder al sistema</p>
 
       <?php $err = Session::getFlash('error'); if ($err): ?>
-        <div class="lg-error"><?= View::e($err) ?></div>
+        <div class="lg-error">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+          <span><?= View::e($err) ?></span>
+        </div>
+      <?php endif; ?>
+      <?php $ok = Session::getFlash('success'); if ($ok): ?>
+        <div class="lg-success">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span><?= View::e($ok) ?></span>
+        </div>
       <?php endif; ?>
 
-      <form class="lg-form" method="POST" action="<?= APP_URL ?>/auth/procesar">
-        <div class="lg-form-row">
-          <div class="lg-field">
-            <label>Correo electrónico</label>
+      <form method="POST" action="<?= APP_URL ?>/auth/procesar" id="loginForm">
+        <div class="lg-field">
+          <label>Correo electrónico</label>
+          <div class="lg-input-wrap">
+            <svg class="lg-ic" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
+            </svg>
             <input type="email" name="email" required autofocus autocomplete="username" placeholder="usuario@empresa.co">
           </div>
-          <div class="lg-field">
-            <label>Contraseña</label>
-            <input type="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+        </div>
+        <div class="lg-field has-toggle">
+          <label>Contraseña</label>
+          <div class="lg-input-wrap">
+            <svg class="lg-ic" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+            </svg>
+            <input type="password" name="password" id="pwInput" required autocomplete="current-password" placeholder="••••••••">
+            <button type="button" class="lg-eye-toggle" id="pwToggle" aria-label="Mostrar contraseña">
+              <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </button>
           </div>
         </div>
-        <button type="submit" class="lg-submit">
-          <span class="lg-submit-circle">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 12h14M13 6l6 6-6 6"/>
-            </svg>
-          </span>
-          <span class="lg-submit-label">Iniciar sesión</span>
+
+        <button type="submit" class="lg-submit" id="loginSubmit">
+          <span id="loginSubmitText">Iniciar sesión</span>
         </button>
       </form>
 
+      <p class="lg-help-line">¿Olvidaste tu contraseña? <a href="<?= APP_URL ?>/auth/recuperar">Recupérala aquí</a></p>
+      <p class="lg-help-line">¿Necesitas ayuda? Contacta a tu administrador del sistema</p>
+
+      <div class="lg-divider"><span>Uso interno</span></div>
       <p class="lg-testusers">
-        Usuarios de prueba (clave: <strong>talento2026</strong>) — admin@empresa.co · maria.gomez@empresa.co · carlos.munoz@empresa.co
+        Usuarios de prueba (clave: <strong>talento2026</strong>)<br>
+        admin@empresa.co · maria.gomez@empresa.co · carlos.munoz@empresa.co
       </p>
+
+      <p class="lg-footer">&copy; <?= date('Y') ?> Fundación Universitaria De Popayán</p>
     </div>
   </div>
 
 </div>
+<script>
+  document.getElementById('loginForm').addEventListener('submit', function () {
+    var btn = document.getElementById('loginSubmit');
+    btn.disabled = true;
+    document.getElementById('loginSubmitText').textContent = 'Ingresando…';
+  });
+
+  document.getElementById('pwToggle').addEventListener('click', function () {
+    var input = document.getElementById('pwInput');
+    var showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    var icon = document.getElementById('eyeIcon');
+    icon.innerHTML = showing
+      ? '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>'
+      : '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.774 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>';
+    this.setAttribute('aria-label', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
+  });
+</script>
 </body>
 </html>

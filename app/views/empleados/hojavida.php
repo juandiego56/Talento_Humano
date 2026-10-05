@@ -43,18 +43,20 @@ $expRecientes = array_slice($experiencia, 0, 3);
 while (count($expRecientes) < 3) { $expRecientes[] = null; }
 ?>
 
-<div class="hv-topbar">
-  <div class="hv-brand">
-    SGTH — Sistema de Gestión de Talento Humano
-    <span>Administración de Personal</span>
+<div class="hv-head">
+  <div class="hv-head-logo">
+    <img src="<?= APP_URL ?>/assets/img/logo-fup.png" alt="Fundación Universitaria De Popayán">
   </div>
-  <div class="hv-code-box">
-    <div><b>Código</b> <span>FO-TH-018</span></div>
-    <div><b>Versión</b> <span>7</span></div>
-    <div><b>Fecha impresión</b> <span><?= date('d/m/Y') ?></span></div>
+  <div class="hv-head-title">
+    <div class="hv-head-title-row top">Gestión del Talento Humano</div>
+    <div class="hv-head-title-row">Formato Único Hoja de Vida</div>
+  </div>
+  <div class="hv-head-meta">
+    <div>Código: FO-TH-018</div>
+    <div>Versión: 07</div>
+    <div>Fecha: Diciembre 2024</div>
   </div>
 </div>
-<div class="hv-title">Formato Único de Hoja de Vida</div>
 
 <div class="hv-tbl-wrap">
 <table class="hv-tbl">
@@ -212,7 +214,7 @@ for ($i = 0; $i < 3; $i++):
     <?= ($hv_chk)($ed && $ed['nivel_educativo']==='especializacion','Esp.') ?>
     <?= ($hv_chk)($ed && $ed['nivel_educativo']==='maestria','Mg.') ?>
     <?= ($hv_chk)($ed && $ed['nivel_educativo']==='doctorado','Dr. / PhD') ?>
-    &nbsp;&nbsp; <?= ($hv_chk)((bool)$ed,'Culminada') ?> <?= ($hv_chk)(false,'En curso') ?>
+    &nbsp;&nbsp; <?= ($hv_chk)($ed && empty($ed['en_curso']),'Culminada') ?> <?= ($hv_chk)($ed && !empty($ed['en_curso']),'En curso') ?>
   </td>
 </tr>
 <tr><td class="lbl">Título obtenido</td><td class="val"><?= ($hv_v)($ed['titulo_obtenido'] ?? null) ?></td></tr>

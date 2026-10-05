@@ -28,4 +28,12 @@ class DocumentoController {
         header('Location: ' . APP_URL . '/documentos');
         exit;
     }
+
+    public function reactivar(string $id): void {
+        Auth::requireGestion();
+        DB::execute("UPDATE documentos_requeridos SET activo = 1 WHERE id = ?", [$id]);
+        Session::flash('success', 'Documento reactivado en el catálogo.');
+        header('Location: ' . APP_URL . '/documentos');
+        exit;
+    }
 }

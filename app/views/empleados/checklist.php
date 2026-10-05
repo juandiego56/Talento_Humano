@@ -57,7 +57,10 @@
         <?php if ($it['archivo_path']): ?>
           <a href="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/checklist/documento/<?= $it['documento_id'] ?>/archivo"
              target="_blank" class="badge badge-aprobado" style="text-decoration:none">
-            📎 <?= View::e($it['archivo_nombre_original']) ?>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:11px;height:11px;vertical-align:-1px;margin-right:2px">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32a1.5 1.5 0 01-2.122-2.122l8.472-8.472"/>
+            </svg>
+            <?= View::e($it['archivo_nombre_original']) ?><?php if (!empty($it['peso_kb'])): ?> (<?= $it['peso_kb'] >= 1024 ? round($it['peso_kb']/1024, 2).' MB' : $it['peso_kb'].' KB' ?>)<?php endif; ?>
           </a>
           <?php if (Auth::puedeGestionar()): ?>
           <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/checklist/documento/<?= $it['documento_id'] ?>/eliminar-archivo"
@@ -70,8 +73,8 @@
                 enctype="multipart/form-data" style="display:flex;align-items:center;gap:6px">
             <input type="hidden" name="documento_id" value="<?= $it['documento_id'] ?>">
             <input type="hidden" name="accion" value="archivo">
-            <input type="file" name="archivo" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="font-size:11px;max-width:170px">
-            <button type="submit" class="btn btn-sm btn-primary">Adjuntar</button>
+            <input type="file" name="archivo" required accept="application/pdf,.pdf" style="font-size:11px;max-width:170px">
+            <button type="submit" class="btn btn-sm btn-primary">Adjuntar (solo PDF)</button>
           </form>
         <?php else: ?>
           <span class="badge badge-borrador">Sin soporte</span>

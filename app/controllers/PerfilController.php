@@ -64,7 +64,12 @@ class PerfilController {
         $user['foto_path'] = $nombreArchivo;
         Session::set('user', $user);
 
-        Session::flash('success', 'Foto de perfil actualizada.');
+        $fondoBlanco = ImagenHelper::pareceTenerFondoBlanco($rutaCompleta);
+        if ($fondoBlanco === false) {
+            Session::flash('warning', 'Foto guardada, pero el fondo no parece blanco/claro. Recuerda que debe ser tipo selfie con fondo blanco.');
+        } else {
+            Session::flash('success', 'Foto de perfil actualizada.');
+        }
         header('Location: ' . APP_URL . '/mi-perfil');
         exit;
     }

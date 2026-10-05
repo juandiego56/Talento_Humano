@@ -1,6 +1,5 @@
 <div class="page-header">
   <div>
-    <div class="page-title">Bienestar Laboral</div>
     <div class="page-subtitle"><?= count($actividades) ?> actividad(es) registradas</div>
   </div>
   <div class="page-actions">

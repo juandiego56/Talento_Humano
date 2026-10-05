@@ -6,7 +6,7 @@
   <title><?= htmlspecialchars($titulo ?? '') ?> — <?= APP_NAME ?></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/app.css?v=<?= filemtime(ROOT.'/public/assets/css/app.css') ?>">
   <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/responsive.css?v=<?= filemtime(ROOT.'/public/assets/css/responsive.css') ?>">
 </head>

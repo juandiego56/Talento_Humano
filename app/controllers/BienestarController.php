@@ -53,6 +53,14 @@ class BienestarController {
     public function ver(string $id): void {
         Auth::requireAuth();
         $actividad = $this->obtenerActividad($id);
+
+        // Genera el token del código QR de auto-registro de asistencia la primera vez que se ve la actividad
+        if (empty($actividad['qr_token'])) {
+            $actividad['qr_token'] = bin2hex(random_bytes(16));
+            DB::execute("UPDATE actividades_bienestar SET qr_token = ? WHERE id = ?", [$actividad['qr_token'], $id]);
+        }
+        $checkinUrl = APP_URL . '/bienestar/checkin/' . $actividad['qr_token'];
+
         $inscritos = DB::fetchAll("
             SELECT bi.*, e.nombres, e.apellidos, e.numero_documento, c.nombre AS cargo
             FROM bienestar_inscripciones bi
@@ -72,7 +80,94 @@ class BienestarController {
             'actividad'   => $actividad,
             'inscritos'   => $inscritos,
             'disponibles' => $disponibles,
+            'checkinUrl'  => $checkinUrl,
         ]);
+    }
+
+    /** Regenera el token del código QR (invalida el anterior) */
+    public function regenerarQr(string $id): void {
+        Auth::requireGestion();
+        $this->obtenerActividad($id);
+        DB::execute("UPDATE actividades_bienestar SET qr_token = ? WHERE id = ?", [bin2hex(random_bytes(16)), $id]);
+        Session::flash('success', 'Código QR regenerado. El código anterior ya no funcionará.');
+        header('Location: ' . APP_URL . '/bienestar/' . $id);
+        exit;
+    }
+
+    /**
+     * Punto de llegada al escanear el código QR de una actividad: muestra un formulario
+     * público (sin necesidad de iniciar sesión) donde el empleado diligencia su número
+     * de documento para registrar su propia asistencia.
+     */
+    public function checkin(string $token): void {
+        $actividad = DB::fetch("SELECT * FROM actividades_bienestar WHERE qr_token = ?", [$token]);
+
+        View::render('bienestar.checkin', [
+            'titulo'    => 'Registro de asistencia',
+            'paso'      => 'formulario',
+            'actividad' => $actividad,
+            'token'     => $token,
+            'error'     => null,
+        ], layout: '');
+    }
+
+    /**
+     * Procesa el número de documento diligenciado en el formulario del QR: busca el
+     * empleado vinculado a ese documento y, si existe, registra su asistencia.
+     */
+    public function checkinRegistrar(string $token): void {
+        $actividad = DB::fetch("SELECT * FROM actividades_bienestar WHERE qr_token = ?", [$token]);
+        $numeroDocumento = trim($_POST['numero_documento'] ?? '');
+
+        if (!$actividad) {
+            View::render('bienestar.checkin', [
+                'titulo'    => 'Registro de asistencia',
+                'paso'      => 'resultado',
+                'ok'        => false,
+                'mensaje'   => 'Este código QR no es válido o la actividad ya no existe.',
+                'actividad' => $actividad,
+            ], layout: '');
+            return;
+        }
+
+        if ($numeroDocumento === '') {
+            View::render('bienestar.checkin', [
+                'titulo'    => 'Registro de asistencia',
+                'paso'      => 'formulario',
+                'actividad' => $actividad,
+                'token'     => $token,
+                'error'     => 'Ingresa tu número de documento.',
+            ], layout: '');
+            return;
+        }
+
+        $emp = DB::fetch("SELECT id, nombres, apellidos FROM empleados WHERE numero_documento = ?", [$numeroDocumento]);
+
+        if (!$emp) {
+            View::render('bienestar.checkin', [
+                'titulo'    => 'Registro de asistencia',
+                'paso'      => 'formulario',
+                'actividad' => $actividad,
+                'token'     => $token,
+                'error'     => 'No encontramos ningún empleado con ese número de documento. Verifica el número o contacta a Talento Humano.',
+            ], layout: '');
+            return;
+        }
+
+        DB::execute("
+            INSERT INTO bienestar_inscripciones (actividad_id, empleado_id, asistio)
+            VALUES (?, ?, 1)
+            ON DUPLICATE KEY UPDATE asistio = 1
+        ", [$actividad['id'], $emp['id']]);
+
+        View::render('bienestar.checkin', [
+            'titulo'         => 'Registro de asistencia',
+            'paso'           => 'resultado',
+            'ok'             => true,
+            'mensaje'        => '',
+            'actividad'      => $actividad,
+            'empleadoNombre' => $emp['nombres'] . ' ' . $emp['apellidos'],
+        ], layout: '');
     }
 
     public function editar(string $id): void {

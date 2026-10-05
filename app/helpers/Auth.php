@@ -4,9 +4,22 @@ class Auth {
     public static function check(): bool   { return Session::has('user'); }
     public static function rol(): int      { return (int)(Session::get('user')['rol_id'] ?? 0); }
 
-    public static function esAdmin(): bool    { return self::rol() === ROL_ADMIN; }
-    public static function esGestor(): bool   { return self::rol() === ROL_GESTOR; }
-    public static function esEmpleado(): bool { return self::rol() === ROL_EMPLEADO; }
+    public static function esAdmin(): bool             { return self::rol() === ROL_ADMIN; }
+    public static function esGestor(): bool            { return self::rol() === ROL_GESTOR; }
+    public static function esEmpleado(): bool          { return self::rol() === ROL_EMPLEADO; }
+    public static function esDirectorPrograma(): bool  { return self::rol() === ROL_DIRECTOR_PROGRAMA; }
+
+    /** Programa académico asignado al usuario autenticado (Director de Programa), o null */
+    public static function programaId(): ?int {
+        $v = Session::get('user')['programa_id'] ?? null;
+        return $v !== null ? (int)$v : null;
+    }
+
+    /** Empleado vinculado a la cuenta autenticada (para autoservicio), o null si no tiene vínculo */
+    public static function empleadoId(): ?int {
+        $v = Session::get('user')['empleado_id'] ?? null;
+        return $v !== null ? (int)$v : null;
+    }
 
     /** Admin y Gestor pueden operar los 3 módulos */
     public static function puedeGestionar(): bool {

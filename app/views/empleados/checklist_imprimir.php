@@ -7,6 +7,19 @@ $chk = function (bool $on): string {
 };
 ?>
 
+<style>
+  /* Formato compacto de ahorro de papel: reduce márgenes y tamaños solo en esta hoja */
+  @media print {
+    .hoja-doc { padding: 10px !important; }
+    body { font-size: 11px; }
+  }
+  .hv-tbl .val, .hv-tbl .lbl, .hv-tbl .banner { padding: 3px 6px !important; font-size: 11px !important; line-height: 1.25; }
+  .hv-title { font-size: 14px !important; margin: 6px 0 !important; }
+  .hv-topbar { margin-bottom: 6px !important; }
+  .hv-note { font-size: 9.5px !important; margin-top: 6px !important; }
+  .hv-firmas { margin-top: 10px !important; }
+</style>
+
 <div class="hv-topbar">
   <div class="hv-brand">
     GESTIÓN DEL TALENTO HUMANO

@@ -22,8 +22,9 @@ class CalculadoraSalarial {
      * @param float $salario  Salario mensual (B2)
      * @param int   $dias     Días laborados en el periodo (E2), sobre base de 30
      * @param int   $horas    Cantidad de horas extra/recargo a valorizar (E27)
+     * @param float $tasaArl  Tasa de ARL según nivel de riesgo (I-V), como fracción. Por defecto Riesgo I (0.522%).
      */
-    public static function calcular(float $salario, int $dias = 30, int $horas = 1): array {
+    public static function calcular(float $salario, int $dias = 30, int $horas = 1, float $tasaArl = 0.00522): array {
         $piso = CL_PISO_IBC;
 
         // Auxilio de transporte: solo si el salario no supera el tope (B3)
@@ -37,7 +38,7 @@ class CalculadoraSalarial {
         // ── Costos a cargo del empleador (seguridad social) ──────────────
         $saludEmpleador    = self::conTope($salario, $salarioProrateado, $piso, 0.085);   // B9
         $pensionEmpleador  = self::conTope($salario, $salarioProrateado, $piso, 0.12);    // B10
-        $arl               = self::conTope($auxTransporte, $auxProrateado, $piso, 0.00522); // B11
+        $arl               = self::conTope($auxTransporte, $auxProrateado, $piso, $tasaArl); // B11
         $totalSegSocialEmp = $saludEmpleador + $pensionEmpleador + $arl;                   // B12
 
         // ── Prestaciones sociales (comunes a empleador y empleado) ───────
@@ -82,7 +83,7 @@ class CalculadoraSalarial {
         return [
             'entrada' => [
                 'salario' => $salario, 'dias' => $dias, 'horas' => $horas,
-                'auxilio_transporte' => $auxTransporte,
+                'auxilio_transporte' => $auxTransporte, 'tasa_arl' => $tasaArl,
             ],
             'empleador' => [
                 'salario_prorateado' => $salarioProrateado,

@@ -1,7 +1,6 @@
 <div class="page-header">
   <div>
-    <div class="page-title">Calculadora de Costos Laborales</div>
-    <div class="page-subtitle">Simulador de costo total de un empleado para la empresa (seguridad social, prestaciones y parafiscales)</div>
+    <div class="page-subtitle">Calcula el costo total de un empleado para la empresa, incluyendo seguridad social, prestaciones y parafiscales</div>
   </div>
   <div class="page-actions">
     <a href="<?= APP_URL ?>/nomina" class="btn btn-outline">← Volver a Nómina</a>
@@ -12,11 +11,16 @@
   <div class="card-header"><div class="card-title">Datos de entrada</div></div>
   <form method="GET" action="<?= APP_URL ?>/nomina/calculadora">
     <div class="form-row">
-      <label>Empleado (opcional, autocompleta el salario)
-        <select onchange="if(this.value) document.getElementById('inpSalario').value = this.value">
+      <label>Empleado (opcional, autocompleta salario y nivel ARL)
+        <select id="selEmpleadoCalc" onchange="
+          if (!this.value) return;
+          var opt = this.options[this.selectedIndex];
+          document.getElementById('inpSalario').value = opt.value;
+          if (opt.dataset.arl) document.getElementById('selNivelArl').value = opt.dataset.arl;
+        ">
           <option value="">— Ingresar salario manualmente —</option>
           <?php foreach ($empleados as $e): ?>
-            <option value="<?= (float)$e['salario_base'] ?>"><?= View::e($e['nombres'].' '.$e['apellidos']) ?> (<?= View::money($e['salario_base']) ?>)</option>
+            <option value="<?= (float)$e['salario_base'] ?>" data-arl="<?= (int)$e['arl_nivel_riesgo'] ?>"><?= View::e($e['nombres'].' '.$e['apellidos']) ?> (<?= View::money($e['salario_base']) ?>)</option>
           <?php endforeach; ?>
         </select>
       </label>
@@ -38,28 +42,53 @@
         <input type="number" name="horas" min="0" value="<?= (int)$horas ?>">
       </label>
     </div>
+    <div class="form-row">
+      <label>Nivel de riesgo ARL
+        <select name="nivel_arl" id="selNivelArl">
+          <?php foreach ($nivelesArl as $n): ?>
+            <option value="<?= (int)$n['nivel'] ?>" <?= (int)$n['nivel']===$nivelArl?'selected':'' ?>><?= View::e($n['descripcion']) ?> — <?= number_format($n['tasa']*100,3) ?>%</option>
+          <?php endforeach; ?>
+        </select>
+      </label>
+    </div>
     <button type="submit" class="btn btn-primary">Calcular</button>
   </form>
 </div>
 
 <div class="stats-grid">
-  <div class="stat-card stat-alerta">
-    <span class="stat-icon">🏢</span>
+  <div class="stat-card stat-total">
+    <span class="stat-icon" style="color:var(--primary)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/>
+      </svg>
+    </span>
     <div class="stat-num" style="font-size:18px"><?= View::money($r['empleador']['total_costos_empresa']) ?></div>
     <div class="stat-label">Total costo empresa</div>
   </div>
-  <div class="stat-card stat-nomina">
-    <span class="stat-icon">👤</span>
+  <div class="stat-card stat-personal">
+    <span class="stat-icon" style="color:var(--blue)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    </span>
     <div class="stat-num" style="font-size:18px"><?= View::money($r['empleado']['pago_empleado']) ?></div>
     <div class="stat-label">Pago al empleado</div>
   </div>
-  <div class="stat-card stat-checklist">
-    <span class="stat-icon">🏦</span>
+  <div class="stat-card stat-bienestar">
+    <span class="stat-icon" style="color:var(--accent)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6 21V9a.75.75 0 01.75-.75h10.5a.75.75 0 01.75.75v12"/>
+      </svg>
+    </span>
     <div class="stat-num" style="font-size:18px"><?= View::money($r['empleado']['pago_acreedor']) ?></div>
     <div class="stat-label">Pago a terceros (EPS, AFP, ARL, Cajas)</div>
   </div>
-  <div class="stat-card stat-personal">
-    <span class="stat-icon">🚌</span>
+  <div class="stat-card stat-checklist">
+    <span class="stat-icon" style="color:var(--info)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25h5.25M12 14.25v-4.5m5.25 0h-11.25M12 9.75h-1.5m0 0V6.75c0-.621.504-1.125 1.125-1.125h9.75c.621 0 1.125.504 1.125 1.125v2.25"/>
+      </svg>
+    </span>
     <div class="stat-num" style="font-size:18px"><?= View::money($r['entrada']['auxilio_transporte']) ?></div>
     <div class="stat-label">Auxilio de transporte aplicado</div>
   </div>
@@ -76,7 +105,7 @@
         <tr><td colspan="2"><hr></td></tr>
         <tr><td>Salud (8,5%)</td><td style="text-align:right"><?= View::money($r['empleador']['salud']) ?></td></tr>
         <tr><td>Pensión (12%)</td><td style="text-align:right"><?= View::money($r['empleador']['pension']) ?></td></tr>
-        <tr><td>ARL (0,522%)</td><td style="text-align:right"><?= View::money($r['empleador']['arl']) ?></td></tr>
+        <tr><td>ARL (<?= number_format($r['entrada']['tasa_arl']*100,3) ?>%)</td><td style="text-align:right"><?= View::money($r['empleador']['arl']) ?></td></tr>
         <tr><td><strong>Subtotal seguridad social</strong></td><td style="text-align:right"><strong><?= View::money($r['empleador']['total_seg_social']) ?></strong></td></tr>
         <tr><td colspan="2"><hr></td></tr>
         <tr><td>Prima de servicio</td><td style="text-align:right"><?= View::money($r['empleador']['prima']) ?></td></tr>

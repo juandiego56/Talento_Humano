@@ -9,6 +9,7 @@ require_once ROOT . '/app/helpers/Auth.php';
 require_once ROOT . '/app/helpers/Router.php';
 require_once ROOT . '/app/helpers/View.php';
 require_once ROOT . '/app/helpers/CalculadoraSalarial.php';
+require_once ROOT . '/app/helpers/ImagenHelper.php';
 
 Session::start();
 

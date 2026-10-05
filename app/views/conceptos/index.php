@@ -1,6 +1,5 @@
 <div class="page-header">
   <div>
-    <div class="page-title">Conceptos de Nómina</div>
     <div class="page-subtitle">Devengados y deducciones que se pueden aplicar en la nómina</div>
   </div>
 </div>

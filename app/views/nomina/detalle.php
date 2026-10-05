@@ -5,7 +5,12 @@
   </div>
   <div class="page-actions">
     <a href="<?= APP_URL ?>/nomina/<?= $nomina['id'] ?>" class="btn btn-outline">← Volver a la nómina</a>
-    <button onclick="window.print()" class="btn btn-outline">🖨️ Imprimir</button>
+    <button onclick="window.print()" class="btn btn-outline">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width:14px;height:14px">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M7 8V3h10v5M7 17H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-2M7 13h10v8H7v-8z"/>
+      </svg>
+      Imprimir
+    </button>
   </div>
 </div>
 

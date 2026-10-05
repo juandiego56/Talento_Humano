@@ -26,6 +26,26 @@
   </div>
 </div>
 
+<div class="card">
+  <div class="card-header"><div class="card-title">Asistencia mediante código QR</div></div>
+  <p class="text-muted" style="margin-bottom:14px">
+    Los empleados escanean este código con su celular, inician sesión (si no lo han hecho) y su asistencia queda registrada automáticamente — sin pasar por un gestor.
+  </p>
+  <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?= urlencode($checkinUrl) ?>"
+         alt="Código QR de asistencia" width="200" height="200" style="border-radius:8px;border:1px solid var(--border,#e5e7eb)">
+    <div style="flex:1;min-width:220px">
+      <div class="dato-label" style="margin-bottom:4px">Enlace directo</div>
+      <div style="font-size:13px;word-break:break-all;background:var(--bg-soft,#f8fafc);padding:8px 10px;border-radius:6px;margin-bottom:12px"><?= View::e($checkinUrl) ?></div>
+      <?php if (Auth::puedeGestionar()): ?>
+      <form method="POST" action="<?= APP_URL ?>/bienestar/<?= $actividad['id'] ?>/qr/regenerar" onsubmit="return confirm('¿Regenerar el código QR? El código actual dejará de funcionar.')">
+        <button type="submit" class="btn btn-outline btn-sm">Regenerar código</button>
+      </form>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+
 <div class="form-row" style="align-items:start">
   <div class="card" style="grid-column: span 2">
     <div class="card-header"><div class="card-title">Empleados inscritos (<?= count($inscritos) ?>)</div></div>

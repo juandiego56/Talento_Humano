@@ -3,28 +3,43 @@ class UsuarioController {
     public function index(): void {
         Auth::requireRol(ROL_ADMIN);
         $usuarios = DB::fetchAll("
-            SELECT u.*, CONCAT(e.nombres,' ',e.apellidos) AS empleado_nombre
-            FROM usuarios u LEFT JOIN empleados e ON e.id = u.empleado_id
+            SELECT u.*, CONCAT(e.nombres,' ',e.apellidos) AS empleado_nombre, p.nombre AS programa_nombre
+            FROM usuarios u
+            LEFT JOIN empleados e ON e.id = u.empleado_id
+            LEFT JOIN programas_academicos p ON p.id = u.programa_id
             ORDER BY u.nombre
         ");
         $empleados = DB::fetchAll("SELECT id, nombres, apellidos FROM empleados WHERE estado='activo' ORDER BY apellidos");
+        $programas = DB::fetchAll("SELECT id, nombre FROM programas_academicos WHERE activo = 1 ORDER BY nombre");
+        $solicitudes = DB::fetchAll("
+            SELECT sp.id, sp.usuario_id, sp.fecha_solicitud, u.nombre, u.email
+            FROM solicitudes_password sp
+            JOIN usuarios u ON u.id = sp.usuario_id
+            WHERE sp.estado = 'pendiente'
+            ORDER BY sp.fecha_solicitud ASC
+        ");
         View::render('usuarios.index', [
-            'titulo'    => 'Usuarios del Sistema',
-            'usuarios'  => $usuarios,
-            'empleados' => $empleados,
+            'titulo'      => 'Usuarios del Sistema',
+            'usuarios'    => $usuarios,
+            'empleados'   => $empleados,
+            'programas'   => $programas,
+            'solicitudes' => $solicitudes,
         ]);
     }
 
     public function guardar(): void {
         Auth::requireRol(ROL_ADMIN);
         try {
+            $rolId = (int)$_POST['rol_id'];
             DB::insert("
-                INSERT INTO usuarios (nombre, email, password_hash, rol_id, empleado_id, activo)
-                VALUES (?,?,?,?,?,1)
+                INSERT INTO usuarios (nombre, email, password_hash, rol_id, programa_id, empleado_id, activo)
+                VALUES (?,?,?,?,?,?,1)
             ", [
                 $_POST['nombre'], $_POST['email'],
                 password_hash($_POST['password'], PASSWORD_DEFAULT),
-                (int)$_POST['rol_id'], ($_POST['empleado_id'] ?? '') ?: null,
+                $rolId,
+                $rolId === ROL_DIRECTOR_PROGRAMA ? (($_POST['programa_id'] ?? '') ?: null) : null,
+                ($_POST['empleado_id'] ?? '') ?: null,
             ]);
             Session::flash('success', 'Usuario creado correctamente.');
         } catch (\PDOException $e) {
@@ -43,6 +58,30 @@ class UsuarioController {
             DB::execute("DELETE FROM usuarios WHERE id = ?", [$id]);
             Session::flash('success', 'Usuario eliminado.');
         }
+        header('Location: ' . APP_URL . '/usuarios');
+        exit;
+    }
+
+    public function restablecerPassword(string $id): void {
+        Auth::requireRol(ROL_ADMIN);
+        $pass = $_POST['password'] ?? '';
+
+        if (strlen($pass) < 6) {
+            Session::flash('error', 'La nueva contraseña debe tener al menos 6 caracteres.');
+            header('Location: ' . APP_URL . '/usuarios');
+            exit;
+        }
+
+        DB::execute("UPDATE usuarios SET password_hash = ? WHERE id = ?", [
+            password_hash($pass, PASSWORD_DEFAULT), $id,
+        ]);
+        DB::execute("
+            UPDATE solicitudes_password
+            SET estado = 'atendida', atendida_por = ?, fecha_atendida = NOW()
+            WHERE usuario_id = ? AND estado = 'pendiente'
+        ", [Auth::user()['id'], $id]);
+
+        Session::flash('success', 'Contraseña restablecida correctamente.');
         header('Location: ' . APP_URL . '/usuarios');
         exit;
     }

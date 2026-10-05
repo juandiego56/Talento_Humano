@@ -1,6 +1,5 @@
 <div class="page-header">
   <div>
-    <div class="page-title">Catálogo de Documentos</div>
     <div class="page-subtitle">Documentos base usados en la lista de chequeo de cada empleado</div>
   </div>
 </div>
@@ -12,17 +11,22 @@
       <tbody>
         <?php if (!$documentos): ?><tr><td colspan="4" class="text-muted">Sin documentos registrados.</td></tr><?php endif; ?>
         <?php foreach ($documentos as $d): ?>
-        <tr style="<?= $d['activo'] ? '' : 'opacity:.45' ?>">
-          <td><?= View::e($d['nombre']) ?></td>
-          <td><?= View::e($d['descripcion'] ?: '—') ?></td>
-          <td><?= $d['obligatorio'] ? '<span class="badge badge-en-revision">Sí</span>' : '<span class="badge badge-borrador">No</span>' ?></td>
+        <tr>
+          <td style="<?= $d['activo'] ? '' : 'color:var(--muted)' ?>"><?= View::e($d['nombre']) ?></td>
+          <td style="<?= $d['activo'] ? '' : 'color:var(--muted)' ?>"><?= View::e($d['descripcion'] ?: '—') ?></td>
+          <td style="<?= $d['activo'] ? '' : 'opacity:.6' ?>"><?= $d['obligatorio'] ? '<span class="badge badge-en-revision">Sí</span>' : '<span class="badge badge-borrador">No</span>' ?></td>
           <td>
             <?php if ($d['activo']): ?>
             <form method="POST" action="<?= APP_URL ?>/documentos/<?= $d['id'] ?>/eliminar" onsubmit="return confirm('¿Desactivar este documento del catálogo?')">
               <button type="submit" class="btn btn-sm btn-outline">Desactivar</button>
             </form>
             <?php else: ?>
+            <div style="display:flex;align-items:center;gap:8px">
               <span class="badge badge-borrador">Inactivo</span>
+              <form method="POST" action="<?= APP_URL ?>/documentos/<?= $d['id'] ?>/reactivar" onsubmit="return confirm('¿Reactivar este documento en el catálogo?')">
+                <button type="submit" class="btn btn-sm btn-primary" style="font-weight:700">Reactivar</button>
+              </form>
+            </div>
             <?php endif; ?>
           </td>
         </tr>

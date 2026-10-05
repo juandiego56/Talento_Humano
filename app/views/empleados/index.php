@@ -1,6 +1,5 @@
 <div class="page-header">
   <div>
-    <div class="page-title">Administración de Personal</div>
     <div class="page-subtitle"><?= count($empleados) ?> empleado(s) encontrados</div>
   </div>
   <div class="page-actions">
@@ -31,6 +30,18 @@
         <?php endforeach; ?>
       </select>
     </label>
+    <?php if (Auth::esDirectorPrograma()): ?>
+      <input type="hidden" name="programa" value="<?= View::e($programaSel) ?>">
+    <?php else: ?>
+    <label>Programa académico
+      <select name="programa">
+        <option value="">Todos</option>
+        <?php foreach ($programas as $p): ?>
+          <option value="<?= $p['id'] ?>" <?= (string)$programaSel === (string)$p['id']?'selected':'' ?>><?= View::e($p['nombre']) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+    <?php endif; ?>
     <label style="align-self:end">
       <button type="submit" class="btn btn-outline" style="width:100%">Filtrar</button>
     </label>
@@ -40,11 +51,11 @@
 <div class="card">
   <table>
     <thead>
-      <tr><th>Empleado</th><th>Documento</th><th>Cargo</th><th>Área</th><th>Ingreso</th><th>Checklist</th><th>Estado</th><th></th></tr>
+      <tr><th>Empleado</th><th>Documento</th><th>Cargo</th><th>Área</th><th>Programa</th><th>Ingreso</th><th>Checklist</th><th>Estado</th><th></th></tr>
     </thead>
     <tbody>
       <?php if (!$empleados): ?>
-        <tr><td colspan="8" class="text-muted">No se encontraron empleados con los filtros seleccionados.</td></tr>
+        <tr><td colspan="9" class="text-muted">No se encontraron empleados con los filtros seleccionados.</td></tr>
       <?php endif; ?>
       <?php foreach ($empleados as $e): ?>
       <tr>
@@ -57,6 +68,7 @@
         <td><?= View::e($e['tipo_documento'].' '.$e['numero_documento']) ?></td>
         <td><?= View::e($e['cargo'] ?? '—') ?></td>
         <td><?= View::e($e['area'] ?? '—') ?></td>
+        <td><?= View::e($e['programa'] ?? '—') ?></td>
         <td><?= View::fecha($e['fecha_ingreso']) ?></td>
         <td>
           <div class="progress-bar" style="width:70px"><div class="progress-fill" style="width:<?= (float)$e['pct_checklist'] ?>%"></div></div>
