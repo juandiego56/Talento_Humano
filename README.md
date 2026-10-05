@@ -24,23 +24,3 @@ Todos con la contraseña: **`talento2026`**
 | carlos.munoz@empresa.co | Empleado (solo consulta) |
 
 ## Estructura del proyecto
-
-```
-sgth/
-├── app/
-│   ├── controllers/   Controladores de cada módulo
-│   ├── helpers/        Router, DB, Auth, Session, View
-│   └── views/          Vistas PHP organizadas por módulo
-├── config/              Configuración de app y base de datos
-├── public/              Punto de entrada (document root de XAMPP)
-│   └── assets/          CSS y JS
-├── uploads/              Carpeta para futuros adjuntos (documentos, fotos)
-└── schema.sql            Script completo de base de datos con datos de ejemplo
-```
-
-## Notas
-
-- El sistema usa PDO con sentencias preparadas y contraseñas cifradas con `password_hash`.
-- Los roles (Administrador / Gestor / Empleado) controlan qué puede crear, editar o eliminar cada usuario.
-- El módulo de Nómina calcula automáticamente salud (4%) y pensión (4%) sobre el salario básico; estos porcentajes se pueden ajustar desde **Conceptos de Nómina**.
-- La hoja de vida y las colillas de pago se pueden imprimir o guardar como PDF directamente desde el navegador (botón "Imprimir").
