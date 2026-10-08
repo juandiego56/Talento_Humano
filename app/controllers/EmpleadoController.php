@@ -1,8 +1,28 @@
 <?php
+require_once ROOT . '/app/helpers/Schema.php';
+require_once ROOT . '/app/helpers/Validador.php';
+
 class EmpleadoController {
+    private const POR_PAGINA = 15;
+
+    /** Un empleado solo puede consultar su propia información; Talento Humano y Dirección de Programa ven la de todos. */
+    private function soloPropioSiEmpleado(string $id): void {
+        if (Auth::esEmpleado() && Auth::empleadoId() !== (int)$id) {
+            Session::flash('error', 'Solo puedes consultar tu propia información.');
+            header('Location: ' . APP_URL . '/');
+            exit;
+        }
+    }
 
     public function index(): void {
         Auth::requireAuth();
+        Schema::asegurarHojaVida();
+
+        // Un empleado raso no tiene acceso al listado de personal: va a su propia ficha.
+        if (Auth::esEmpleado()) {
+            header('Location: ' . APP_URL . '/empleados/' . (int)Auth::empleadoId());
+            exit;
+        }
 
         $q       = trim($_GET['q'] ?? '');
         $estado  = $_GET['estado'] ?? '';
@@ -13,14 +33,17 @@ class EmpleadoController {
         $where  = [];
         $params = [];
         if ($q !== '') {
-            $where[] = '(e.nombres LIKE ? OR e.apellidos LIKE ? OR e.numero_documento LIKE ?)';
+            $where[] = '(e.nombres LIKE ? OR e.apellidos LIKE ? OR e.numero_documento LIKE ? OR CONCAT(e.nombres, " ", e.apellidos) LIKE ?)';
             $like = "%$q%";
-            array_push($params, $like, $like, $like);
+            array_push($params, $like, $like, $like, $like);
         }
         if ($estado !== '')   { $where[] = 'e.estado = ?'; $params[] = $estado; }
         if ($area !== '')     { $where[] = 'e.area_id = ?'; $params[] = $area; }
         if ($programa !== '') { $where[] = 'e.programa_id = ?'; $params[] = $programa; }
         $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+
+        $total = (int)(DB::fetch("SELECT COUNT(*) AS t FROM empleados e $whereSql", $params)['t'] ?? 0);
+        [$pagina, $paginas, $offset] = View::paginar($total, self::POR_PAGINA, $_GET['pagina'] ?? 1);
 
         $empleados = DB::fetchAll("
             SELECT e.*, c.nombre AS cargo, a.nombre AS area, p.nombre AS programa,
@@ -32,6 +55,7 @@ class EmpleadoController {
             LEFT JOIN v_checklist_completitud vc ON vc.empleado_id = e.id
             $whereSql
             ORDER BY e.apellidos, e.nombres
+            LIMIT " . self::POR_PAGINA . " OFFSET " . (int)$offset . "
         ", $params);
 
         $areas     = DB::fetchAll("SELECT * FROM areas ORDER BY nombre");
@@ -46,6 +70,10 @@ class EmpleadoController {
             'estado'      => $estado,
             'areaSel'     => $area,
             'programaSel' => $programa,
+            'total'       => $total,
+            'pagina'      => $pagina,
+            'paginas'     => $paginas,
+            'porPagina'   => self::POR_PAGINA,
         ]);
     }
 
@@ -56,6 +84,11 @@ class EmpleadoController {
         $programas = DB::fetchAll("SELECT * FROM programas_academicos WHERE activo = 1 ORDER BY nombre");
         $escalafon = DB::fetchAll("SELECT cargo_id, nivel_educativo, salario_tiempo_completo, salario_medio_tiempo FROM escalafon_salarial");
         $nivelesArl = DB::fetchAll("SELECT * FROM arl_niveles_riesgo ORDER BY nivel");
+
+        // Si el guardado falló por una validación, se conservan los datos escritos.
+        $old = Session::get('old_empleado') ?: [];
+        Session::set('old_empleado', null);
+
         View::render('empleados.crear', [
             'titulo'     => 'Nuevo Empleado',
             'cargos'     => $cargos,
@@ -63,33 +96,64 @@ class EmpleadoController {
             'programas'  => $programas,
             'escalafon'  => $escalafon,
             'nivelesArl' => $nivelesArl,
+            'old'        => $old,
         ]);
+    }
+
+    /** Valida los datos que define Talento Humano (identificación, acceso y laborales). */
+    private function validarDatosGestion(array $p): array {
+        return Validador::errores(
+            Validador::enLista($p['tipo_documento'] ?? '', ['CC', 'CE', 'TI', 'PA'], 'El tipo de documento'),
+            Validador::documento($p['numero_documento'] ?? ''),
+            Validador::nombrePersona($p['nombres'] ?? '', 'Los nombres'),
+            Validador::nombrePersona($p['apellidos'] ?? '', 'Los apellidos'),
+            Validador::email($p['email'] ?? ''),
+            Validador::fechaIngreso($p['fecha_ingreso'] ?? ''),
+            Validador::enLista($p['tipo_contrato'] ?? '', ['termino_fijo', 'termino_indefinido', 'obra_labor', 'prestacion_servicios'], 'El tipo de contrato'),
+            Validador::salario($p['salario_base'] ?? '')
+        );
     }
 
     public function guardar(): void {
         Auth::requireGestion();
+        Schema::asegurarHojaVida();
 
+        $p = $_POST;
+        $errores = $this->validarDatosGestion($p);
+
+        if (!$errores) {
+            $email = trim($p['email']);
+            if (DB::fetch("SELECT id FROM empleados WHERE numero_documento = ?", [trim($p['numero_documento'])])) {
+                $errores[] = 'Ya existe un empleado con ese número de documento.';
+            }
+            if (DB::fetch("SELECT id FROM usuarios WHERE email = ?", [$email])) {
+                $errores[] = 'Ya existe un usuario con ese correo; usa otro correo para el empleado.';
+            }
+        }
+
+        if ($errores) {
+            Session::set('old_empleado', $p);
+            Session::flash('error', implode(' · ', $errores));
+            header('Location: ' . APP_URL . '/empleados/crear');
+            exit;
+        }
+
+        $pdo = DB::connect();
         try {
+            $pdo->beginTransaction();
             $id = DB::insert("
                 INSERT INTO empleados
-                  (tipo_documento, numero_documento, nombres, apellidos, fecha_nacimiento, genero,
-                   estado_civil, direccion, telefono, email, cargo_id, area_id, programa_id, fecha_ingreso,
-                   tipo_contrato, salario_base, nivel_educativo, tipo_vinculacion_docente, eps, fondo_pension, arl, arl_nivel_riesgo, tipo_sangre,
-                   contacto_emergencia_nombre, contacto_emergencia_telefono, estado,
-                   banco, tipo_cuenta, numero_cuenta)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                  (tipo_documento, numero_documento, nombres, apellidos, email, cargo_id, area_id, programa_id,
+                   fecha_ingreso, tipo_contrato, salario_base, nivel_educativo, tipo_vinculacion_docente,
+                   arl_nivel_riesgo, estado, hojavida_estado)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             ", [
-                $_POST['tipo_documento'], $_POST['numero_documento'], $_POST['nombres'], $_POST['apellidos'],
-                ($_POST['fecha_nacimiento'] ?? '') ?: null, ($_POST['genero'] ?? '') ?: null, ($_POST['estado_civil'] ?? '') ?: null,
-                ($_POST['direccion'] ?? '') ?: null, ($_POST['telefono'] ?? '') ?: null, ($_POST['email'] ?? '') ?: null,
-                ($_POST['cargo_id'] ?? '') ?: null, ($_POST['area_id'] ?? '') ?: null, ($_POST['programa_id'] ?? '') ?: null, $_POST['fecha_ingreso'],
-                $_POST['tipo_contrato'], (float)($_POST['salario_base'] ?? 0),
-                ($_POST['nivel_educativo'] ?? '') ?: null, ($_POST['tipo_vinculacion_docente'] ?? '') ?: null,
-                ($_POST['eps'] ?? '') ?: null, ($_POST['fondo_pension'] ?? '') ?: null, ($_POST['arl'] ?? '') ?: null,
-                max(1, min(5, (int)($_POST['arl_nivel_riesgo'] ?? 1))),
-                ($_POST['tipo_sangre'] ?? '') ?: null, ($_POST['contacto_emergencia_nombre'] ?? '') ?: null,
-                ($_POST['contacto_emergencia_telefono'] ?? '') ?: null, 'activo',
-                ($_POST['banco'] ?? '') ?: null, ($_POST['tipo_cuenta'] ?? '') ?: null, ($_POST['numero_cuenta'] ?? '') ?: null,
+                $p['tipo_documento'], trim($p['numero_documento']), Validador::texto($p['nombres']), Validador::texto($p['apellidos']),
+                trim($p['email']),
+                ($p['cargo_id'] ?? '') ?: null, ($p['area_id'] ?? '') ?: null, ($p['programa_id'] ?? '') ?: null,
+                $p['fecha_ingreso'], $p['tipo_contrato'], Validador::dinero($p['salario_base']),
+                ($p['nivel_educativo'] ?? '') ?: null, ($p['tipo_vinculacion_docente'] ?? '') ?: null,
+                max(1, min(5, (int)($p['arl_nivel_riesgo'] ?? 1))), 'activo', 'borrador',
             ]);
 
             // Inicializa lista de chequeo con todos los documentos activos
@@ -98,12 +162,26 @@ class EmpleadoController {
                 SELECT ?, id, 0 FROM documentos_requeridos WHERE activo = 1
             ", [$id]);
 
-            Session::flash('success', 'Empleado registrado correctamente.');
+            // Crea el usuario del empleado: entra con su correo y, la primera vez, con su número de documento como contraseña.
+            DB::insert("
+                INSERT INTO usuarios (nombre, email, password_hash, rol_id, empleado_id, activo, debe_cambiar_password)
+                VALUES (?,?,?,?,?,1,1)
+            ", [
+                Validador::texto($p['nombres']) . ' ' . Validador::texto($p['apellidos']), trim($p['email']),
+                password_hash(trim($p['numero_documento']), PASSWORD_DEFAULT), ROL_EMPLEADO, $id,
+            ]);
+            $pdo->commit();
+
+            Session::flash('success', 'Empleado registrado. Se creó su usuario: ingresa con el correo ' . trim($p['email'])
+                . ' y, como contraseña inicial, su número de documento. Desde ahí diligencia su hoja de vida.');
             header('Location: ' . APP_URL . '/empleados/' . $id);
         } catch (\PDOException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            error_log('EmpleadoController::guardar: ' . $e->getMessage());
+            Session::set('old_empleado', $p);
             Session::flash('error', str_contains($e->getMessage(), 'Duplicate')
-                ? 'Ya existe un empleado con ese número de documento.'
-                : 'Error al guardar el empleado.');
+                ? 'Ya existe un empleado o usuario con ese documento o correo.'
+                : 'Error al guardar el empleado. Intenta de nuevo.');
             header('Location: ' . APP_URL . '/empleados/crear');
         }
         exit;
@@ -111,6 +189,8 @@ class EmpleadoController {
 
     public function ver(string $id): void {
         Auth::requireAuth();
+        Schema::asegurarHojaVida();
+        $this->soloPropioSiEmpleado($id);
         $empleado = $this->obtenerEmpleado($id);
 
         $educacion   = DB::fetchAll("SELECT * FROM empleado_educacion WHERE empleado_id = ? ORDER BY anio_graduacion DESC", [$id]);
@@ -139,6 +219,8 @@ class EmpleadoController {
             'historialNomina' => $historialNomina,
             'actividades'     => $actividades,
             'notasHojaVida'   => $notasHojaVida,
+            'complementaria'  => DB::fetchAll("SELECT * FROM empleado_formacion_complementaria WHERE empleado_id = ? ORDER BY fecha DESC", [$id]),
+            'usuario'         => DB::fetch("SELECT id, email, activo FROM usuarios WHERE empleado_id = ? AND rol_id = ?", [$id, ROL_EMPLEADO]),
         ]);
     }
 
@@ -161,32 +243,95 @@ class EmpleadoController {
         ]);
     }
 
+    /** Campos que diligencia el empleado en su hoja de vida: una vez llenos, Talento Humano ya no los modifica. */
+    private const CAMPOS_EMPLEADO = [
+        'fecha_nacimiento', 'genero', 'estado_civil', 'tipo_sangre', 'direccion', 'telefono',
+        'contacto_emergencia_nombre', 'contacto_emergencia_telefono', 'eps', 'fondo_pension', 'arl',
+        'banco', 'tipo_cuenta', 'numero_cuenta',
+    ];
+
     public function actualizar(string $id): void {
         Auth::requireGestion();
+        Schema::asegurarHojaVida();
+        $actual = $this->obtenerEmpleado($id);
+        $p = $_POST;
+        $volver = APP_URL . '/empleados/' . $id . '/editar';
 
-        $estado = $_POST['estado'] ?? 'activo';
-        DB::execute("
-            UPDATE empleados SET
-              tipo_documento=?, numero_documento=?, nombres=?, apellidos=?, fecha_nacimiento=?, genero=?,
-              estado_civil=?, direccion=?, telefono=?, email=?, cargo_id=?, area_id=?, programa_id=?, fecha_ingreso=?,
-              tipo_contrato=?, salario_base=?, nivel_educativo=?, tipo_vinculacion_docente=?, eps=?, fondo_pension=?, arl=?, arl_nivel_riesgo=?, tipo_sangre=?,
-              contacto_emergencia_nombre=?, contacto_emergencia_telefono=?, estado=?,
-              fecha_retiro=?, banco=?, tipo_cuenta=?, numero_cuenta=?
-            WHERE id=?
-        ", [
-            $_POST['tipo_documento'], $_POST['numero_documento'], $_POST['nombres'], $_POST['apellidos'],
-            ($_POST['fecha_nacimiento'] ?? '') ?: null, ($_POST['genero'] ?? '') ?: null, ($_POST['estado_civil'] ?? '') ?: null,
-            ($_POST['direccion'] ?? '') ?: null, ($_POST['telefono'] ?? '') ?: null, ($_POST['email'] ?? '') ?: null,
-            ($_POST['cargo_id'] ?? '') ?: null, ($_POST['area_id'] ?? '') ?: null, ($_POST['programa_id'] ?? '') ?: null, $_POST['fecha_ingreso'],
-            $_POST['tipo_contrato'], (float)($_POST['salario_base'] ?? 0),
-            ($_POST['nivel_educativo'] ?? '') ?: null, ($_POST['tipo_vinculacion_docente'] ?? '') ?: null,
-            ($_POST['eps'] ?? '') ?: null, ($_POST['fondo_pension'] ?? '') ?: null, ($_POST['arl'] ?? '') ?: null,
-            max(1, min(5, (int)($_POST['arl_nivel_riesgo'] ?? 1))),
-            ($_POST['tipo_sangre'] ?? '') ?: null, ($_POST['contacto_emergencia_nombre'] ?? '') ?: null,
-            ($_POST['contacto_emergencia_telefono'] ?? '') ?: null, $estado,
-            $estado === 'retirado' ? ($_POST['fecha_retiro'] ?: date('Y-m-d')) : null,
-            ($_POST['banco'] ?? '') ?: null, ($_POST['tipo_cuenta'] ?? '') ?: null, ($_POST['numero_cuenta'] ?? '') ?: null,
-            $id,
+        $errores = $this->validarDatosGestion($p);
+
+        // Datos del empleado: los ya diligenciados se conservan; solo se aceptan los que estaban vacíos.
+        $p['fondo_pension'] = Validador::fondoPension($p);
+        $datos = [];
+        foreach (self::CAMPOS_EMPLEADO as $c) {
+            $yaLleno = trim((string)($actual[$c] ?? '')) !== '';
+            $nuevo   = Validador::texto($p[$c] ?? '');
+            $datos[$c] = $yaLleno ? $actual[$c] : ($nuevo !== '' ? $nuevo : null);
+            if (!$yaLleno && $nuevo !== '') {
+                $err = match ($c) {
+                    'fecha_nacimiento'             => Validador::fechaNacimiento($nuevo),
+                    'genero'                       => Validador::enLista($nuevo, ['M', 'F', 'Otro'], 'El género'),
+                    'estado_civil'                 => Validador::enLista($nuevo, Validador::ESTADOS_CIVILES, 'El estado civil'),
+                    'tipo_sangre'                  => Validador::enLista($nuevo, Validador::TIPOS_SANGRE, 'El tipo de sangre'),
+                    'direccion'                    => Validador::direccion($nuevo),
+                    'telefono'                     => Validador::telefono($nuevo),
+                    'contacto_emergencia_nombre'   => Validador::nombrePersona($nuevo, 'El nombre del contacto de emergencia'),
+                    'contacto_emergencia_telefono' => Validador::telefono($nuevo, 'El teléfono del contacto de emergencia'),
+                    'tipo_cuenta'                  => Validador::enLista($nuevo, ['ahorros', 'corriente'], 'El tipo de cuenta'),
+                    'numero_cuenta'                => Validador::cuenta($nuevo),
+                    default                        => null,
+                };
+                if ($err) $errores[] = $err;
+            }
+        }
+
+        if (!$errores) {
+            if (DB::fetch("SELECT id FROM empleados WHERE numero_documento = ? AND id <> ?", [trim($p['numero_documento']), $id])) {
+                $errores[] = 'Ya existe otro empleado con ese número de documento.';
+            }
+            if (DB::fetch("SELECT id FROM usuarios WHERE email = ? AND (empleado_id IS NULL OR empleado_id <> ?)", [trim($p['email']), $id])) {
+                $errores[] = 'Ese correo ya lo usa otro usuario del sistema.';
+            }
+        }
+        if ($errores) {
+            Session::flash('error', implode(' · ', $errores));
+            header('Location: ' . $volver);
+            exit;
+        }
+
+        $estado = in_array($p['estado'] ?? '', ['activo', 'inactivo', 'retirado'], true) ? $p['estado'] : 'activo';
+        $fechaRetiro = match ($estado) {
+            'retirado' => (($p['fecha_retiro'] ?? '') ?: ($actual['fecha_retiro'] ?: date('Y-m-d'))),
+            'inactivo' => $actual['fecha_retiro'],
+            default    => null,
+        };
+
+        $cols = [
+            'tipo_documento' => $p['tipo_documento'], 'numero_documento' => trim($p['numero_documento']),
+            'nombres' => Validador::texto($p['nombres']), 'apellidos' => Validador::texto($p['apellidos']), 'email' => trim($p['email']),
+            'cargo_id' => ($p['cargo_id'] ?? '') ?: null, 'area_id' => ($p['area_id'] ?? '') ?: null,
+            'programa_id' => ($p['programa_id'] ?? '') ?: null, 'fecha_ingreso' => $p['fecha_ingreso'],
+            'tipo_contrato' => $p['tipo_contrato'], 'salario_base' => Validador::dinero($p['salario_base']),
+            'nivel_educativo' => ($p['nivel_educativo'] ?? '') ?: null,
+            'tipo_vinculacion_docente' => ($p['tipo_vinculacion_docente'] ?? '') ?: null,
+            'arl_nivel_riesgo' => max(1, min(5, (int)($p['arl_nivel_riesgo'] ?? 1))),
+            'estado' => $estado, 'fecha_retiro' => $fechaRetiro,
+        ] + $datos;
+
+        $set = implode(', ', array_map(fn($c) => "$c = ?", array_keys($cols)));
+        try {
+            DB::execute("UPDATE empleados SET $set WHERE id = ?", array_merge(array_values($cols), [$id]));
+        } catch (\PDOException $e) {
+            error_log('EmpleadoController::actualizar: ' . $e->getMessage());
+            Session::flash('error', str_contains($e->getMessage(), 'Duplicate')
+                ? 'Ya existe otro empleado con ese número de documento.'
+                : 'Error al guardar los cambios. Intenta de nuevo.');
+            header('Location: ' . $volver);
+            exit;
+        }
+
+        // El usuario del empleado sigue a su ficha: nombre, correo y acceso (solo si está activo).
+        DB::execute("UPDATE usuarios SET nombre = ?, email = ?, activo = ? WHERE empleado_id = ? AND rol_id = ?", [
+            $cols['nombres'] . ' ' . $cols['apellidos'], $cols['email'], $estado === 'activo' ? 1 : 0, $id, ROL_EMPLEADO,
         ]);
 
         Session::flash('success', 'Empleado actualizado correctamente.');
@@ -194,11 +339,75 @@ class EmpleadoController {
         exit;
     }
 
+    /** Cambia rápido el estado de un empleado entre activo e inactivo (botón de la lista de empleados). */
+    public function cambiarEstado(string $id): void {
+        Auth::requireGestion();
+
+        // Vuelve a la lista conservando los filtros que tenía, sin aceptar destinos externos.
+        $volver = APP_URL . '/empleados';
+        $ref    = parse_url($_SERVER['HTTP_REFERER'] ?? '');
+        if (($ref['path'] ?? '') === parse_url($volver, PHP_URL_PATH) && !empty($ref['query'])) {
+            $volver .= '?' . $ref['query'];
+        }
+
+        $nuevo = $_POST['estado'] ?? '';
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !in_array($nuevo, ['activo', 'inactivo'], true)) {
+            header('Location: ' . $volver);
+            exit;
+        }
+
+        $empleado = $this->obtenerEmpleado($id);
+        if ($empleado['estado'] === 'retirado') {
+            Session::flash('error', 'Un empleado retirado no se activa ni se inactiva desde la lista. Edita su ficha para cambiar su estado.');
+        } else {
+            DB::execute("UPDATE empleados SET estado = ? WHERE id = ?", [$nuevo, $id]);
+            DB::execute("UPDATE usuarios SET activo = ? WHERE empleado_id = ? AND rol_id = ?", [$nuevo === 'activo' ? 1 : 0, $id, ROL_EMPLEADO]);
+            Session::flash('success', $empleado['nombres'] . ' ' . $empleado['apellidos'] . ($nuevo === 'inactivo' ? ' quedó inactivo.' : ' quedó activo.'));
+        }
+        header('Location: ' . $volver);
+        exit;
+    }
+
+    /** "Eliminar" un empleado = darlo de baja: no se borra nada; queda inactivo, con fecha de retiro, y su usuario ya no puede ingresar. */
     public function eliminar(string $id): void {
-        Auth::requireRol(ROL_ADMIN);
-        DB::execute("DELETE FROM empleados WHERE id = ?", [$id]);
-        Session::flash('success', 'Empleado eliminado.');
+        Auth::requireGestion();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . APP_URL . '/empleados/' . $id);
+            exit;
+        }
+        $empleado = $this->obtenerEmpleado($id);
+        DB::execute("UPDATE empleados SET estado = 'inactivo', fecha_retiro = CURDATE() WHERE id = ?", [$id]);
+        DB::execute("UPDATE usuarios SET activo = 0 WHERE empleado_id = ? AND rol_id = ?", [$id, ROL_EMPLEADO]);
+        Session::flash('success', $empleado['nombres'] . ' ' . $empleado['apellidos'] . ' fue dado de baja: quedó inactivo y su usuario ya no puede ingresar. Su historial se conserva.');
         header('Location: ' . APP_URL . '/empleados');
+        exit;
+    }
+
+    /** Crea el usuario de un empleado que aún no tiene (correo + número de documento como contraseña inicial). */
+    public function crearUsuario(string $id): void {
+        Auth::requireGestion();
+        $empleado = $this->obtenerEmpleado($id);
+        $volver = APP_URL . '/empleados/' . $id;
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: ' . $volver); exit; }
+
+        if (DB::fetch("SELECT id FROM usuarios WHERE empleado_id = ?", [$id])) {
+            Session::flash('error', 'Este empleado ya tiene un usuario.');
+        } elseif (Validador::email($empleado['email'] ?? '')) {
+            Session::flash('error', 'Primero registra un correo válido para el empleado (Editar → Identificación).');
+        } elseif (DB::fetch("SELECT id FROM usuarios WHERE email = ?", [$empleado['email']])) {
+            Session::flash('error', 'Ese correo ya lo usa otro usuario del sistema.');
+        } else {
+            DB::insert("
+                INSERT INTO usuarios (nombre, email, password_hash, rol_id, empleado_id, activo, debe_cambiar_password)
+                VALUES (?,?,?,?,?,?,1)
+            ", [
+                $empleado['nombres'] . ' ' . $empleado['apellidos'], $empleado['email'],
+                password_hash($empleado['numero_documento'], PASSWORD_DEFAULT), ROL_EMPLEADO, $id,
+                $empleado['estado'] === 'activo' ? 1 : 0,
+            ]);
+            Session::flash('success', 'Usuario creado: ingresa con ' . $empleado['email'] . ' y, como contraseña inicial, su número de documento.');
+        }
+        header('Location: ' . $volver);
         exit;
     }
 
@@ -206,6 +415,8 @@ class EmpleadoController {
 
     public function hojaVida(string $id): void {
         Auth::requireAuth();
+        Schema::asegurarHojaVida();
+        $this->soloPropioSiEmpleado($id);
         $empleado    = $this->obtenerEmpleado($id);
         $educacion   = DB::fetchAll("SELECT * FROM empleado_educacion WHERE empleado_id = ? ORDER BY anio_graduacion", [$id]);
         $experiencia = DB::fetchAll("SELECT * FROM empleado_experiencia WHERE empleado_id = ? ORDER BY fecha_inicio", [$id]);
@@ -215,31 +426,21 @@ class EmpleadoController {
             'empleado'    => $empleado,
             'educacion'   => $educacion,
             'experiencia' => $experiencia,
+            'complementaria' => DB::fetchAll("SELECT * FROM empleado_formacion_complementaria WHERE empleado_id = ? ORDER BY fecha DESC", [$id]),
         ], layout: 'imprimible');
     }
 
-    public function guardarEducacion(string $id): void {
+    /** La formación y la experiencia las diligencia el empleado en su hoja de vida; Talento Humano solo las revisa. */
+    private function soloLecturaHojaVida(string $id): void {
         Auth::requireGestion();
-        DB::insert("
-            INSERT INTO empleado_educacion
-              (empleado_id, nivel_educativo, institucion, titulo_obtenido, anio_graduacion, fecha_expedicion, en_curso)
-            VALUES (?,?,?,?,?,?,?)
-        ", [
-            $id, $_POST['nivel_educativo'], $_POST['institucion'], ($_POST['titulo_obtenido'] ?? '') ?: null,
-            ($_POST['anio_graduacion'] ?? '') ?: null, ($_POST['fecha_expedicion'] ?? '') ?: null,
-            isset($_POST['en_curso']) ? 1 : 0,
-        ]);
-        Session::flash('success', 'Formación académica agregada.');
+        Session::flash('error', 'La formación académica y la experiencia las diligencia el empleado en su hoja de vida. Talento Humano solo las revisa y las devuelve con observaciones si hace falta.');
         header('Location: ' . APP_URL . '/empleados/' . $id);
         exit;
     }
 
-    public function eliminarEducacion(string $id, string $eduId): void {
-        Auth::requireGestion();
-        DB::execute("DELETE FROM empleado_educacion WHERE id = ? AND empleado_id = ?", [$eduId, $id]);
-        header('Location: ' . APP_URL . '/empleados/' . $id);
-        exit;
-    }
+    public function guardarEducacion(string $id): void { $this->soloLecturaHojaVida($id); }
+
+    public function eliminarEducacion(string $id, string $eduId): void { $this->soloLecturaHojaVida($id); }
 
     public function toggleConvalidacion(string $id): void {
         Auth::requireGestion();
@@ -251,21 +452,15 @@ class EmpleadoController {
         exit;
     }
 
-    public function guardarExperiencia(string $id): void {
-        Auth::requireGestion();
-        DB::insert("
-            INSERT INTO empleado_experiencia (empleado_id, empresa, cargo, fecha_inicio, fecha_fin, funciones)
-            VALUES (?,?,?,?,?,?)
-        ", [$id, $_POST['empresa'], $_POST['cargo'], ($_POST['fecha_inicio'] ?? '') ?: null, ($_POST['fecha_fin'] ?? '') ?: null, ($_POST['funciones'] ?? '') ?: null]);
-        Session::flash('success', 'Experiencia laboral agregada.');
-        header('Location: ' . APP_URL . '/empleados/' . $id);
-        exit;
-    }
+    public function guardarExperiencia(string $id): void { $this->soloLecturaHojaVida($id); }
+
+    public function eliminarExperiencia(string $id, string $expId): void { $this->soloLecturaHojaVida($id); }
 
     // ── Lista de chequeo ─────────────────────────────────────────────────
 
     public function checklist(string $id): void {
         Auth::requireAuth();
+        $this->soloPropioSiEmpleado($id);
         $empleado = $this->obtenerEmpleado($id);
 
         // Los 5 documentos del proceso interno de selección/contratación (Requerimiento de
@@ -599,6 +794,7 @@ class EmpleadoController {
 
     public function imprimirChecklist(string $id): void {
         Auth::requireAuth();
+        $this->soloPropioSiEmpleado($id);
         $empleado = $this->obtenerEmpleado($id);
 
         $items = DB::fetchAll("

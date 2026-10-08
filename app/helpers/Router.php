@@ -11,6 +11,8 @@ class Router {
             '#^auth/login$#'                                  => ['AuthController', 'loginForm'],
             '#^auth/procesar$#'                                => ['AuthController', 'procesar'],
             '#^auth/logout$#'                                 => ['AuthController', 'logout'],
+            '#^cambiar-password$#'                            => ['AuthController', 'cambiarForm'],
+            '#^cambiar-password/guardar$#'                    => ['AuthController', 'cambiarGuardar'],
             '#^auth/recuperar$#'                              => ['AuthController', 'recuperarForm'],
             '#^auth/recuperar/enviar$#'                       => ['AuthController', 'recuperarEnviar'],
 
@@ -22,7 +24,10 @@ class Router {
             '#^empleados/(\d+)/editar$#'                      => ['EmpleadoController', 'editar'],
             '#^empleados/(\d+)/actualizar$#'                  => ['EmpleadoController', 'actualizar'],
             '#^empleados/(\d+)/eliminar$#'                    => ['EmpleadoController', 'eliminar'],
+            '#^empleados/(\d+)/estado$#'                       => ['EmpleadoController', 'cambiarEstado'],
             '#^empleados/(\d+)/hojavida$#'                    => ['EmpleadoController', 'hojaVida'],
+            '#^empleados/(\d+)/hojavida/revisar$#'            => ['HojaVidaController', 'revisar'],
+            '#^empleados/(\d+)/usuario$#'                     => ['EmpleadoController', 'crearUsuario'],
             '#^empleados/(\d+)/educacion/guardar$#'           => ['EmpleadoController', 'guardarEducacion'],
             '#^empleados/(\d+)/educacion/(\d+)/eliminar$#'    => ['EmpleadoController', 'eliminarEducacion'],
             '#^empleados/(\d+)/educacion/convalidacion$#'     => ['EmpleadoController', 'toggleConvalidacion'],
@@ -36,6 +41,18 @@ class Router {
             '#^empleados/(\d+)/checklist/documento/(\d+)/eliminar-archivo$#' => ['EmpleadoController', 'eliminarArchivoChecklist'],
             '#^empleados/(\d+)/foto$#'                                 => ['EmpleadoController', 'subirFoto'],
             '#^empleados/(\d+)/foto/eliminar$#'                        => ['EmpleadoController', 'eliminarFoto'],
+
+            // ── Mi hoja de vida (la diligencia el empleado con su usuario) ──
+            '#^mi-hoja-de-vida$#'                                      => ['HojaVidaController', 'index'],
+            '#^mi-hoja-de-vida/paso/(\d)$#'                            => ['HojaVidaController', 'paso'],
+            '#^mi-hoja-de-vida/paso/(\d)/guardar$#'                    => ['HojaVidaController', 'guardarPaso'],
+            '#^mi-hoja-de-vida/formacion/guardar$#'                    => ['HojaVidaController', 'guardarFormacion'],
+            '#^mi-hoja-de-vida/complementaria/guardar$#'              => ['HojaVidaController', 'guardarComplementaria'],
+            '#^mi-hoja-de-vida/experiencia/guardar$#'                  => ['HojaVidaController', 'guardarExperiencia'],
+            '#^mi-hoja-de-vida/sin-experiencia$#'                      => ['HojaVidaController', 'marcarSinExperiencia'],
+            '#^mi-hoja-de-vida/enviar$#'                               => ['HojaVidaController', 'enviar'],
+            '#^mi-hoja-de-vida/actualizar$#'                           => ['HojaVidaController', 'actualizar'],
+            '#^mi-hoja-de-vida/cancelar-actualizacion$#'               => ['HojaVidaController', 'cancelarActualizacion'],
 
             '#^mi-perfil$#'                                            => ['PerfilController', 'ver'],
             '#^mi-perfil/foto$#'                                       => ['PerfilController', 'subirFoto'],
@@ -128,8 +145,6 @@ class Router {
             // ── Formulario público de hoja de vida (sin sesión) ─────────
             '#^hoja-de-vida/nueva$#'                          => ['PublicHojaVidaController', 'formulario'],
             '#^hoja-de-vida/guardar$#'                        => ['PublicHojaVidaController', 'guardar'],
-            '#^empleados/(\d+)/diligenciar$#'                 => ['PublicHojaVidaController', 'formularioEmpleado'],
-            '#^empleados/(\d+)/diligenciar/guardar$#'         => ['PublicHojaVidaController', 'guardarEmpleado'],
         ];
     }
 

@@ -1,6 +1,10 @@
 <?php
 define('APP_NAME',    'SGTH — Talento Humano');
 
+// Modo depuración: false = no se muestran errores técnicos en pantalla (se guardan en el log del servidor).
+// Ponlo en true SOLO en tu computador cuando estés programando o buscando un error.
+define('APP_DEBUG', false);
+
 // APP_URL ya no queda fijo en "localhost". Usa el host con el que llegó la petición actual
 // (ej. la IP de red local del computador, si se accedió así), y si se accedió por
 // "localhost"/127.0.0.1 detecta automáticamente la IP de red (Wi-Fi/Ethernet) real del

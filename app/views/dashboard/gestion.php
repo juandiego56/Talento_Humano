@@ -36,43 +36,112 @@
   <?php endif; ?>
 </div>
 
-<div class="stats-grid">
-  <div class="stat-card stat-personal">
-    <span class="stat-icon" style="color:var(--blue)">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
-      </svg>
-    </span>
-    <div class="stat-num"><?= (int)$empStats['activos'] ?></div>
-    <div class="stat-label">Empleados activos</div>
+<?php
+// ── Gráficas del tablero (SVG generado en el servidor: sin librerías ni internet) ──
+$cNavy = '#0a2540'; $cMain = '#2dd4bf'; $cSoft = '#2dd4bf'; $cBlue = '#2563eb'; $cGrey = '#cbd5e1';
+
+/** Dona: $segs = [[etiqueta, valor, color], ...]. Con total 0 se dibuja solo el aro vacío. */
+$donut = function (array $segs, string $centro, string $etq, string $aria): string {
+    $r = 38; $c = 2 * M_PI * $r;
+    $total = array_sum(array_column($segs, 1));
+    $svg = '<svg viewBox="0 0 100 100" class="chart-donut" role="img" aria-label="' . View::e($aria) . '">'
+         . '<circle cx="50" cy="50" r="' . $r . '" fill="none" stroke="#e2e8f0" stroke-width="12"/>';
+    if ($total > 0) {
+        $off = 0;
+        foreach ($segs as [$l, $v, $col]) {
+            if ($v <= 0) continue;
+            $len = $c * $v / $total;
+            $svg .= '<circle cx="50" cy="50" r="' . $r . '" fill="none" stroke="' . $col . '" stroke-width="12"'
+                  . ' stroke-dasharray="' . round($len, 2) . ' ' . round($c - $len, 2) . '"'
+                  . ' stroke-dashoffset="' . round(-$off, 2) . '" transform="rotate(-90 50 50)"/>';
+            $off += $len;
+        }
+    }
+    return $svg . '<text x="50" y="51" class="donut-num">' . View::e($centro) . '</text>'
+                . '<text x="50" y="64" class="donut-lbl">' . View::e($etq) . '</text></svg>';
+};
+
+$pctChecklist = max(0, min(100, (float)$checklistProm));
+
+$segPersonal = [
+    ['Activos',   (int)$empStats['activos'],   $cMain],
+    ['Inactivos', (int)$empStats['inactivos'], $cBlue],
+];
+
+$colEstadoAct = ['programada' => $cMain, 'en_curso' => $cBlue, 'finalizada' => $cNavy, 'cancelada' => $cGrey];
+$segBienestar = []; $totalBienestar = 0;
+foreach ($bienestarPorEstado as $b) {
+    $segBienestar[] = [View::estadoActividadLabel($b['estado']), (int)$b['total'], $colEstadoAct[$b['estado']] ?? $cGrey];
+    $totalBienestar += (int)$b['total'];
+}
+
+$mesesCorto = [1=>'Ene',2=>'Feb',3=>'Mar',4=>'Abr',5=>'May',6=>'Jun',7=>'Jul',8=>'Ago',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dic'];
+$moneyCorto = fn($v) => $v >= 1000000 ? number_format($v / 1000000, 1, ',', '.') . ' M' : number_format($v / 1000, 0, ',', '.') . ' k';
+$maxNomina = $nominaSerie ? max(array_map(fn($n) => (float)$n['total_neto'], $nominaSerie)) : 0;
+?>
+<div class="chart-grid">
+
+  <div class="chart-card">
+    <div class="chart-title">Personal por estado</div>
+    <div class="chart-body"><?= $donut($segPersonal, (string)(int)$empStats['activos'], 'activos', 'Empleados por estado') ?></div>
+    <ul class="chart-legend">
+      <?php foreach ($segPersonal as [$l, $v, $col]): ?>
+        <li><span class="sw" style="background:<?= $col ?>"></span><?= $l ?><b><?= $v ?></b></li>
+      <?php endforeach; ?>
+    </ul>
   </div>
-  <div class="stat-card stat-checklist">
-    <span class="stat-icon" style="color:var(--info)">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
-    </span>
-    <div class="stat-num"><?= $checklistProm ?>%</div>
-    <div class="stat-label">Avance lista de chequeo (prom.)</div>
+
+  <div class="chart-card">
+    <div class="chart-title">Lista de chequeo</div>
+    <div class="chart-body"><?= $donut([['Avance', $pctChecklist, $cBlue], ['Pendiente', 100 - $pctChecklist, '#e2e8f0']], $checklistProm . '%', 'promedio', 'Avance promedio de la lista de chequeo') ?></div>
+    <ul class="chart-legend">
+      <li><span class="sw" style="background:<?= $cBlue ?>"></span>Documentos completados<b><?= $checklistProm ?>%</b></li>
+      <li><span class="sw" style="background:#e2e8f0"></span>Pendientes<b><?= round(100 - $pctChecklist, 1) ?>%</b></li>
+    </ul>
   </div>
-  <div class="stat-card stat-nomina">
-    <span class="stat-icon" style="color:var(--success)">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
-    </span>
-    <div class="stat-num"><?= $ultimaNomina ? View::money($ultimaNomina['total_neto']) : '—' ?></div>
-    <div class="stat-label">Última nómina neta<?= $ultimaNomina ? ' (' . View::periodoLabel($ultimaNomina['periodo']) . ')' : '' ?></div>
+
+  <div class="chart-card">
+    <div class="chart-title">Nómina neta por periodo</div>
+    <div class="chart-body chart-body-bars">
+      <?php if (!$nominaSerie): ?>
+        <p class="chart-empty">Sin nóminas generadas</p>
+      <?php else: $n = count($nominaSerie); $slot = 40; $x0 = (240 - $n * $slot) / 2; ?>
+        <svg viewBox="0 0 240 130" class="chart-bars" role="img" aria-label="Nómina neta de los últimos periodos">
+          <line x1="0" y1="100" x2="240" y2="100" stroke="#e2e8f0"/>
+          <?php foreach ($nominaSerie as $i => $nm):
+              $v = (float)$nm['total_neto'];
+              $h = $maxNomina > 0 ? max(2, 72 * $v / $maxNomina) : 2;
+              $x = $x0 + $i * $slot + 8; $y = 100 - $h;
+              $ultima = ($i === $n - 1);
+              [$yy, $mm] = array_pad(explode('-', $nm['periodo']), 2, '');
+          ?>
+            <rect x="<?= $x ?>" y="<?= round($y, 1) ?>" width="24" height="<?= round($h, 1) ?>" rx="3" fill="<?= $ultima ? $cBlue : $cSoft ?>"/>
+            <text x="<?= $x + 12 ?>" y="<?= round($y - 4, 1) ?>" class="bar-val"><?= $moneyCorto($v) ?></text>
+            <text x="<?= $x + 12 ?>" y="114" class="bar-lbl"><?= $mesesCorto[(int)$mm] ?? $mm ?></text>
+          <?php endforeach; ?>
+        </svg>
+      <?php endif; ?>
+    </div>
+    <ul class="chart-legend">
+      <?php if ($ultimaNomina): ?>
+        <li>Última (<?= View::periodoLabel($ultimaNomina['periodo']) ?>)<b><?= View::money($ultimaNomina['total_neto']) ?></b></li>
+      <?php else: ?>
+        <li>Aún no hay nóminas para graficar</li>
+      <?php endif; ?>
+    </ul>
   </div>
-  <div class="stat-card stat-bienestar">
-    <span class="stat-icon" style="color:var(--accent)">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" style="width:22px;height:22px">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
-      </svg>
-    </span>
-    <div class="stat-num"><?= (int)$bienestarStats['programadas'] ?></div>
-    <div class="stat-label">Actividades de bienestar programadas</div>
+
+  <div class="chart-card">
+    <div class="chart-title">Actividades de bienestar</div>
+    <div class="chart-body"><?= $donut($segBienestar, (string)$totalBienestar, 'actividades', 'Actividades de bienestar por estado') ?></div>
+    <ul class="chart-legend">
+      <?php if (!$segBienestar): ?><li>Aún no hay actividades</li><?php endif; ?>
+      <?php foreach ($segBienestar as [$l, $v, $col]): ?>
+        <li><span class="sw" style="background:<?= $col ?>"></span><?= $l ?><b><?= $v ?></b></li>
+      <?php endforeach; ?>
+    </ul>
   </div>
+
 </div>
 
 <div class="form-row" style="align-items:start">

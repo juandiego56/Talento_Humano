@@ -1,13 +1,19 @@
 <?php
+require_once ROOT . '/app/helpers/Schema.php';
+
 class UsuarioController {
     public function index(): void {
         Auth::requireRol(ROL_ADMIN);
+        $porPagina = 15;
+        $total = (int)(DB::fetch("SELECT COUNT(*) AS t FROM usuarios")['t'] ?? 0);
+        [$pagina, $paginas, $offset] = View::paginar($total, $porPagina, $_GET['pagina'] ?? 1);
         $usuarios = DB::fetchAll("
             SELECT u.*, CONCAT(e.nombres,' ',e.apellidos) AS empleado_nombre, p.nombre AS programa_nombre
             FROM usuarios u
             LEFT JOIN empleados e ON e.id = u.empleado_id
             LEFT JOIN programas_academicos p ON p.id = u.programa_id
             ORDER BY u.nombre
+            LIMIT $porPagina OFFSET $offset
         ");
         $empleados = DB::fetchAll("SELECT id, nombres, apellidos FROM empleados WHERE estado='activo' ORDER BY apellidos");
         $programas = DB::fetchAll("SELECT id, nombre FROM programas_academicos WHERE activo = 1 ORDER BY nombre");
@@ -21,6 +27,7 @@ class UsuarioController {
         View::render('usuarios.index', [
             'titulo'      => 'Usuarios del Sistema',
             'usuarios'    => $usuarios,
+            'pagina'      => $pagina, 'paginas' => $paginas, 'total' => $total, 'porPagina' => $porPagina,
             'empleados'   => $empleados,
             'programas'   => $programas,
             'solicitudes' => $solicitudes,
@@ -29,11 +36,12 @@ class UsuarioController {
 
     public function guardar(): void {
         Auth::requireRol(ROL_ADMIN);
+        Schema::asegurarCambioClave();
         try {
             $rolId = (int)$_POST['rol_id'];
             DB::insert("
-                INSERT INTO usuarios (nombre, email, password_hash, rol_id, programa_id, empleado_id, activo)
-                VALUES (?,?,?,?,?,?,1)
+                INSERT INTO usuarios (nombre, email, password_hash, rol_id, programa_id, empleado_id, activo, debe_cambiar_password)
+                VALUES (?,?,?,?,?,?,1,1)
             ", [
                 $_POST['nombre'], $_POST['email'],
                 password_hash($_POST['password'], PASSWORD_DEFAULT),
@@ -72,7 +80,8 @@ class UsuarioController {
             exit;
         }
 
-        DB::execute("UPDATE usuarios SET password_hash = ? WHERE id = ?", [
+        Schema::asegurarCambioClave();
+        DB::execute("UPDATE usuarios SET password_hash = ?, debe_cambiar_password = 1 WHERE id = ?", [
             password_hash($pass, PASSWORD_DEFAULT), $id,
         ]);
         DB::execute("
@@ -81,7 +90,7 @@ class UsuarioController {
             WHERE usuario_id = ? AND estado = 'pendiente'
         ", [Auth::user()['id'], $id]);
 
-        Session::flash('success', 'Contraseña restablecida correctamente.');
+        Session::flash('success', 'Contraseña restablecida. La persona deberá crear una nueva al ingresar.');
         header('Location: ' . APP_URL . '/usuarios');
         exit;
     }

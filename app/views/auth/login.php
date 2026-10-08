@@ -32,7 +32,7 @@
   .lg-brand-sub  { font-size:11.5px; color:rgba(255,255,255,.7); font-weight:400; }
 
   .lg-eyebrow { font-size:11px; letter-spacing:.18em; color:var(--teal); font-weight:700; margin-bottom:10px; text-transform:uppercase; }
-  .lg-script { font-family:'Lato', sans-serif; font-weight:900; font-size:clamp(36px,4.6vw,54px); line-height:1.08; color:#fff; text-shadow:0 4px 24px rgba(0,0,0,.18); }
+  .lg-script { font-family:'Lato', sans-serif; font-weight:900; font-size:clamp(32px,4vw,48px); line-height:1.12; color:#fff; text-shadow:0 4px 24px rgba(0,0,0,.18); margin:0 0 18px; max-width:520px; }
   .lg-sub { font-weight:600; font-size:clamp(18px,2vw,23px); color:#cfe6fb; margin:4px 0 18px; }
   .lg-desc { font-size:14px; font-weight:400; color:rgba(255,255,255,.82); line-height:1.65; max-width:360px; }
 
@@ -120,9 +120,7 @@
         </div>
       </div>
 
-      <div class="lg-eyebrow">Sistema de gestión de</div>
-      <div class="lg-script">Talento Humano</div>
-      <div class="lg-sub">de tu institución</div>
+      <h1 class="lg-script">Sistema de Gestión de Talento Humano</h1>
       <p class="lg-desc">Administración de personal, nómina y bienestar institucional desde un solo lugar.</p>
     </div>
   </div>

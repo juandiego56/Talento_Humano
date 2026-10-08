@@ -43,9 +43,20 @@
           <td><?= View::e((int)$u['rol_id'] === ROL_DIRECTOR_PROGRAMA ? ($u['programa_nombre'] ?: 'Sin programa asignado') : ($u['empleado_nombre'] ?: '—')) ?></td>
           <td>
             <?php if ((int)$u['id'] !== (int)Auth::user()['id']): ?>
-            <form method="POST" action="<?= APP_URL ?>/usuarios/<?= $u['id'] ?>/eliminar" onsubmit="return confirm('¿Eliminar este usuario?')">
-              <button type="submit" class="btn btn-sm btn-outline">Eliminar</button>
-            </form>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">
+              <details>
+                <summary class="btn btn-sm btn-outline" style="cursor:pointer;list-style:none">Restablecer clave</summary>
+                <form method="POST" action="<?= APP_URL ?>/usuarios/<?= $u['id'] ?>/restablecer-password"
+                      style="display:flex;flex-direction:column;gap:6px;margin-top:6px;width:170px"
+                      onsubmit="return confirm('¿Restablecer la contraseña de <?= View::e(addslashes($u['nombre'])) ?>? Tendrá que crear una nueva al ingresar.')">
+                  <input type="text" name="password" placeholder="Clave temporal" required minlength="6" autocomplete="off">
+                  <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                </form>
+              </details>
+              <form method="POST" action="<?= APP_URL ?>/usuarios/<?= $u['id'] ?>/eliminar" onsubmit="return confirm('¿Eliminar este usuario?')">
+                <button type="submit" class="btn btn-sm btn-outline">Eliminar</button>
+              </form>
+            </div>
             <?php else: ?>
               <span style="font-size:11px;color:var(--muted)">Tú</span>
             <?php endif; ?>
@@ -54,6 +65,7 @@
         <?php endforeach; ?>
       </tbody>
     </table>
+    <?php View::partial('layouts._paginacion', ['pagina' => $pagina, 'paginas' => $paginas, 'total' => $total, 'porPagina' => $porPagina]); ?>
   </div>
 
   <div class="card">

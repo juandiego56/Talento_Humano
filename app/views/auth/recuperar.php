@@ -149,7 +149,12 @@
 
 </div>
 <script>
-  document.getElementById('recForm').addEventListener('submit', function () {
+  document.getElementById('recForm').addEventListener('submit', function (ev) {
+    var correo = this.elements['email'].value.trim();
+    if (!confirm('¿Enviar la solicitud de restablecimiento de contraseña para ' + correo + '?\n\nUn administrador la atenderá y se pondrá en contacto contigo.')) {
+      ev.preventDefault();
+      return;
+    }
     var btn = document.getElementById('recSubmit');
     btn.disabled = true;
     document.getElementById('recSubmitText').textContent = 'Enviando…';

@@ -53,8 +53,8 @@ while (count($expRecientes) < 3) { $expRecientes[] = null; }
   </div>
   <div class="hv-head-meta">
     <div>Código: FO-TH-018</div>
-    <div>Versión: 07</div>
-    <div>Fecha: Diciembre 2024</div>
+    <div>Formato versión: 07 · Dic. 2024</div>
+    <div>Hoja de vida v<?= (int)($empleado['hojavida_version'] ?? 1) ?><?= !empty($empleado['hojavida_fecha']) ? ' · ' . date('d/m/Y', strtotime($empleado['hojavida_fecha'])) : '' ?></div>
   </div>
 </div>
 
@@ -227,7 +227,13 @@ for ($i = 0; $i < 3; $i++):
   <td class="lbl">Título obtenido</td>
   <td class="val" style="font-size:10.5px">Curso / Taller / Diplomado / Seminario / Actualización / Otro — Fecha (D/M/A)</td>
 </tr>
-<?php for ($i = 0; $i < 3; $i++): ?>
+<?php $compl = $complementaria ?? []; foreach ($compl as $cp): ?>
+<tr>
+  <td class="lbl" style="white-space:normal"><?= View::e($cp['nombre']) ?></td>
+  <td class="val"><?= View::e($cp['institucion']) ?> &nbsp;·&nbsp; <?= View::fecha($cp['fecha']) ?><?= !empty($cp['horas']) ? ' &nbsp;·&nbsp; ' . (int)$cp['horas'] . ' h' : '' ?></td>
+</tr>
+<?php endforeach; ?>
+<?php for ($i = count($compl); $i < 3; $i++): ?>
 <tr class="empty-row"><td colspan="2">&nbsp;</td></tr>
 <?php endfor; ?>
 

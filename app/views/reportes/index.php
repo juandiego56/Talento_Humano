@@ -42,7 +42,6 @@
         <option value="" <?= $filtros['estado'] === '' ? 'selected' : '' ?>>Todos</option>
         <option value="activo" <?= $filtros['estado'] === 'activo' ? 'selected' : '' ?>>Activo</option>
         <option value="inactivo" <?= $filtros['estado'] === 'inactivo' ? 'selected' : '' ?>>Inactivo</option>
-        <option value="retirado" <?= $filtros['estado'] === 'retirado' ? 'selected' : '' ?>>Retirado</option>
       </select>
     </label>
     <?php if ($filtros['programa_id'] !== '' || $filtros['estado'] !== 'activo'): ?>

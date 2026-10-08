@@ -1,4 +1,6 @@
 <?php
+require_once ROOT . '/app/helpers/Schema.php';
+
 class DashboardController {
     public function index(): void {
         Auth::requireAuth();
@@ -74,8 +76,22 @@ class DashboardController {
             ORDER BY total DESC
         ");
 
+        // ── Datos para las gráficas del tablero ─────────────────────────
+        // Últimas 6 nóminas (sin anuladas), de la más antigua a la más reciente
+        $nominaSerie = array_reverse(DB::fetchAll("
+            SELECT periodo, total_neto FROM nominas
+            WHERE estado <> 'anulada'
+            ORDER BY periodo DESC LIMIT 6
+        "));
+
+        $bienestarPorEstado = DB::fetchAll("
+            SELECT estado, COUNT(*) AS total FROM actividades_bienestar GROUP BY estado
+        ");
+
         View::render('dashboard.gestion', [
             'titulo'                 => 'Tablero de Talento Humano',
+            'nominaSerie'            => $nominaSerie,
+            'bienestarPorEstado'     => $bienestarPorEstado,
             'solicitudesPendientes'  => $solicitudesPendientes,
             'verificacionPendiente'  => $verificacionPendiente,
             'nominasBorrador'        => $nominasBorrador,
@@ -129,6 +145,7 @@ class DashboardController {
 
     /** Empleado: su propio avance y lo próximo en bienestar. */
     private function dashboardEmpleado(): void {
+        Schema::asegurarHojaVida();
         $empleadoId = Auth::empleadoId();
 
         $empleado = $empleadoId ? DB::fetch("
@@ -138,6 +155,12 @@ class DashboardController {
             LEFT JOIN areas  a ON a.id = e.area_id
             WHERE e.id = ?
         ", [$empleadoId]) : null;
+
+        // Mientras la hoja de vida no esté enviada (o la hayan devuelto), el empleado llega directo a diligenciarla.
+        if ($empleado && in_array($empleado['hojavida_estado'] ?? 'borrador', ['borrador', 'devuelta'], true) && empty($_GET['sin_redireccion'])) {
+            header('Location: ' . APP_URL . '/mi-hoja-de-vida');
+            exit;
+        }
 
         $checklist = $empleadoId ? DB::fetch("
             SELECT * FROM v_checklist_completitud WHERE empleado_id = ?

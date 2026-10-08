@@ -13,6 +13,9 @@
       border-radius: var(--r-lg); box-shadow: var(--sh);
     }
     .hoja-toolbar { max-width: 800px; margin: 0 auto 14px; display:flex; justify-content:space-between; align-items:center; }
+    body.embed { background: #fff; padding: 0; }
+    body.embed .hoja-toolbar { display: none; }
+    body.embed .hoja-doc { box-shadow: none; border-radius: 0; max-width: 860px; padding: 24px 28px; }
     @media print {
       body { background: #fff; padding: 0; }
       .hoja-toolbar { display: none; }
@@ -20,9 +23,14 @@
     }
   </style>
 </head>
-<body>
+<body class="<?= isset($_GET['embed']) ? 'embed' : '' ?>">
   <div class="hoja-toolbar">
-    <a href="javascript:history.back()" class="btn btn-outline btn-sm">← Volver</a>
+    <?php
+      $hvVolver = (class_exists('Auth') && Auth::esEmpleado())
+          ? APP_URL . '/mi-hoja-de-vida/paso/7'
+          : APP_URL . '/empleados' . (isset($empleado['id']) ? '/' . (int)$empleado['id'] : '');
+    ?>
+    <a href="<?= $hvVolver ?>" target="_top" class="btn btn-outline btn-sm">← Volver</a>
     <button onclick="window.print()" class="btn btn-primary btn-sm">Imprimir / Guardar PDF</button>
   </div>
   <div class="hoja-doc">

@@ -37,18 +37,12 @@
     </div>
   </div>
   <div class="page-actions">
-    <a href="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/hojavida" class="btn btn-outline" target="_blank">
+    <a href="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/hojavida" class="btn btn-outline">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" style="width:16px;height:16px">
         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-1.519-2.019a2.25 2.25 0 10-3.462 0M13.481 15.231L15 17.25m-3.462-2.019L9 17.25m3.75-15h-6a2.25 2.25 0 00-2.25 2.25v15a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25V9.75L14.25 3.75z"/>
       </svg>
       Hoja de vida
     </a>
-    <button type="button" class="btn btn-outline" onclick="sgthCopiarEnlace(this)" data-url="<?= View::e(rtrim(APP_URL, '/')) ?>/empleados/<?= $empleado['id'] ?>/diligenciar">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" style="width:16px;height:16px">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/>
-      </svg>
-      Copiar enlace
-    </button>
     <a href="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/entrevista" class="btn btn-outline">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" style="width:16px;height:16px">
         <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.5-1.185A8.959 8.959 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/>
@@ -95,6 +89,43 @@
     <div class="stat-num"><?= count($actividades) ?></div>
     <div class="stat-label">Actividades de bienestar</div>
   </div>
+</div>
+
+<?php $hvEstado = $empleado['hojavida_estado'] ?? 'borrador'; $esPropio = Auth::empleadoId() === (int)$empleado['id']; ?>
+<div class="card">
+  <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <div class="card-title">Hoja de vida</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <span class="badge <?= View::hojaVidaEstadoBadge($hvEstado) ?>"><?= View::hojaVidaEstadoLabel($hvEstado) ?></span>
+      <span class="badge badge-borrador">Versión <?= (int)($empleado['hojavida_version'] ?? 1) ?></span>
+      <?php if (!empty($empleado['hojavida_fecha'])): ?><span class="badge badge-borrador">Fecha: <?= View::fecha($empleado['hojavida_fecha']) ?></span><?php endif; ?>
+    </div>
+  </div>
+
+  <?php if ($esPropio): ?>
+    <a href="<?= APP_URL ?>/mi-hoja-de-vida" class="btn btn-primary btn-sm">
+      <?= in_array($hvEstado, ['borrador', 'devuelta'], true) ? 'Diligenciar mi hoja de vida' : 'Ver mi hoja de vida' ?>
+    </a>
+  <?php elseif (Auth::puedeGestionar()): ?>
+    <?php if ($hvEstado === 'borrador'): ?>
+      <p class="text-muted">El empleado aún no ha enviado su hoja de vida. La diligencia él mismo con su usuario; aquí solo se visualiza y se valida.</p>
+    <?php elseif ($hvEstado === 'devuelta'): ?>
+      <p class="text-muted">Devuelta al empleado con estas observaciones: <?= nl2br(View::e($empleado['hojavida_observaciones'] ?? '')) ?></p>
+    <?php elseif ($hvEstado === 'enviada'): ?>
+      <p class="text-muted" style="margin-bottom:10px">El empleado envió su hoja de vida<?= !empty($empleado['hojavida_enviada_en']) ? ' el ' . View::fecha($empleado['hojavida_enviada_en']) : '' ?>. Revísala (botón "Hoja de vida" de arriba) y apruébala o devuélvela indicando qué debe corregir.</p>
+      <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/hojavida/revisar">
+        <label>Observaciones <span class="text-muted" style="font-weight:400">(obligatorias si la devuelves)</span>
+          <textarea name="observaciones" rows="3" maxlength="1000" placeholder="Ej. La dirección está incompleta y falta la fecha de expedición del título profesional."></textarea>
+        </label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button type="submit" name="accion" value="aprobar" class="btn btn-primary btn-sm" onclick="return confirm('¿Aprobar esta hoja de vida?')">Aprobar hoja de vida</button>
+          <button type="submit" name="accion" value="devolver" class="btn btn-outline btn-sm" style="color:var(--danger);border-color:#fecaca">Devolver con observaciones</button>
+        </div>
+      </form>
+    <?php else: ?>
+      <p class="text-muted">Aprobada<?= !empty($empleado['hojavida_revisada_por']) ? ' por ' . View::e($empleado['hojavida_revisada_por']) : '' ?><?= !empty($empleado['hojavida_revisada_en']) ? ' el ' . View::fecha($empleado['hojavida_revisada_en']) : '' ?>.</p>
+    <?php endif; ?>
+  <?php endif; ?>
 </div>
 
 <div class="card">
@@ -154,44 +185,11 @@
           <?= View::e($ed['institucion']) ?><?= $ed['anio_graduacion'] ? ' · '.$ed['anio_graduacion'] : '' ?>
           <?php if (!empty($ed['fecha_expedicion'])): ?> · Título expedido <?= View::fecha($ed['fecha_expedicion']) ?><?php endif; ?>
         </div>
-        <?php if (Auth::puedeGestionar()): ?>
-        <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/educacion/<?= $ed['id'] ?>/eliminar" style="display:inline" onsubmit="return confirm('¿Eliminar este registro?')">
-          <button type="submit" class="btn btn-sm btn-outline" style="margin-top:4px;color:var(--danger);border-color:#fecaca">Eliminar</button>
-        </form>
-        <?php endif; ?>
       </div>
     <?php endforeach; else: ?>
-      <p class="text-muted">Sin registros de formación académica.</p>
+      <p class="text-muted">El empleado aún no ha registrado su formación académica en la hoja de vida.</p>
     <?php endif; ?>
 
-    <?php if (Auth::puedeGestionar()): ?>
-    <details style="margin-top:14px">
-      <summary style="cursor:pointer;color:var(--primary);font-weight:600;font-size:13px">+ Agregar formación</summary>
-      <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/educacion/guardar" style="margin-top:10px">
-        <div class="form-row">
-          <label>Nivel
-            <select name="nivel_educativo" required>
-              <?php foreach (['bachillerato','tecnico','tecnologo','pregrado','especializacion','maestria','doctorado'] as $n): ?>
-                <option value="<?= $n ?>"><?= View::nivelEducativoLabel($n) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </label>
-        </div>
-        <div class="form-row">
-          <label>Institución<input type="text" name="institucion" required></label>
-          <label>Título obtenido<input type="text" name="titulo_obtenido"></label>
-          <label>Año de grado<input type="number" name="anio_graduacion" min="1960" max="2100"></label>
-        </div>
-        <div class="form-row">
-          <label>Fecha de expedición del título<input type="date" name="fecha_expedicion"></label>
-          <label style="align-self:end;display:flex;align-items:center;gap:6px;margin-bottom:14px">
-            <input type="checkbox" name="en_curso" value="1"> En curso / no culminado
-          </label>
-        </div>
-        <button type="submit" class="btn btn-primary btn-sm">Agregar</button>
-      </form>
-    </details>
-    <?php endif; ?>
   </div>
 
   <div class="card">
@@ -201,36 +199,26 @@
         <div class="hoja-entry-title"><?= View::e($ex['cargo']) ?> — <?= View::e($ex['empresa']) ?></div>
         <div class="hoja-entry-sub"><?= View::fecha($ex['fecha_inicio']) ?> – <?= $ex['fecha_fin'] ? View::fecha($ex['fecha_fin']) : 'Actual' ?></div>
         <?php if ($ex['funciones']): ?><div style="font-size:12.5px;color:var(--txt2);margin-top:3px"><?= View::e($ex['funciones']) ?></div><?php endif; ?>
-        <?php if (Auth::puedeGestionar()): ?>
-        <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/experiencia/<?= $ex['id'] ?>/eliminar" style="display:inline" onsubmit="return confirm('¿Eliminar este registro?')">
-          <button type="submit" class="btn btn-sm btn-outline" style="margin-top:4px;color:var(--danger);border-color:#fecaca">Eliminar</button>
-        </form>
-        <?php endif; ?>
       </div>
     <?php endforeach; else: ?>
-      <p class="text-muted">Sin registros de experiencia laboral.</p>
+      <p class="text-muted">El empleado aún no ha registrado experiencia laboral en la hoja de vida.</p>
     <?php endif; ?>
 
-    <?php if (Auth::puedeGestionar()): ?>
-    <details style="margin-top:14px">
-      <summary style="cursor:pointer;color:var(--primary);font-weight:600;font-size:13px">+ Agregar experiencia</summary>
-      <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/experiencia/guardar" style="margin-top:10px">
-        <div class="form-row">
-          <label>Empresa<input type="text" name="empresa" required></label>
-          <label>Cargo<input type="text" name="cargo" required></label>
-        </div>
-        <div class="form-row">
-          <label>Fecha inicio<input type="date" name="fecha_inicio"></label>
-          <label>Fecha fin<input type="date" name="fecha_fin"></label>
-        </div>
-        <label>Funciones<textarea name="funciones" rows="2"></textarea></label>
-        <button type="submit" class="btn btn-primary btn-sm">Agregar</button>
-      </form>
-    </details>
-    <?php endif; ?>
   </div>
 
 </div>
+
+<?php if (!empty($complementaria)): ?>
+<div class="card">
+  <div class="card-header"><div class="card-title">Formación complementaria</div></div>
+  <?php foreach ($complementaria as $c): ?>
+    <div class="hoja-entry">
+      <div class="hoja-entry-title"><?= View::e($c['nombre']) ?></div>
+      <div class="hoja-entry-sub"><?= View::e($c['institucion']) ?> · <?= View::fecha($c['fecha']) ?><?= $c['horas'] ? ' · ' . (int)$c['horas'] . ' horas' : '' ?></div>
+    </div>
+  <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
 <?php if (!empty($notasHojaVida)): ?>
 <div class="card">
@@ -283,25 +271,23 @@
   </table>
 </div>
 
-<?php if (Auth::esAdmin()): ?>
+<?php if (Auth::puedeGestionar()): ?>
 <div class="card" style="border-color:#fecaca">
-  <div class="card-header"><div class="card-title" style="color:var(--danger)">Zona de riesgo</div></div>
-  <p class="text-muted" style="margin-bottom:10px">Eliminar este empleado borrará también su hoja de vida, checklist e historial asociado.</p>
-  <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/eliminar" onsubmit="return confirm('Esta acción no se puede deshacer. ¿Eliminar definitivamente a este empleado?')">
-    <button type="submit" class="btn btn-outline" style="color:var(--danger);border-color:#fecaca">Eliminar empleado</button>
+  <div class="card-header"><div class="card-title" style="color:var(--danger)">Gestión de acceso y baja</div></div>
+  <?php if (empty($usuario)): ?>
+  <p class="text-muted" style="margin-bottom:10px">Este empleado todavía no tiene usuario para ingresar a la plataforma y diligenciar su hoja de vida.</p>
+  <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/usuario" style="margin-bottom:14px">
+    <button type="submit" class="btn btn-primary">Crear usuario del empleado</button>
   </form>
+  <?php else: ?>
+  <p class="text-muted" style="margin-bottom:10px">Usuario de acceso: <strong><?= View::e($usuario['email']) ?></strong> · <?= !empty($usuario['activo']) ? 'activo' : 'sin acceso' ?>.</p>
+  <?php endif; ?>
+  <?php if ($empleado['estado'] !== 'inactivo' || !empty($usuario['activo'])): ?>
+  <p class="text-muted" style="margin-bottom:10px">Dar de baja deja al empleado como inactivo, registra la fecha de retiro y le quita el acceso a la plataforma. No se borra su historial (hoja de vida, checklist, nómina).</p>
+  <form method="POST" action="<?= APP_URL ?>/empleados/<?= $empleado['id'] ?>/eliminar" onsubmit="return confirm('¿Dar de baja a este empleado? Quedará inactivo y no podrá ingresar a la plataforma.')">
+    <button type="submit" class="btn btn-outline" style="color:var(--danger);border-color:#fecaca">Dar de baja al empleado</button>
+  </form>
+  <?php endif; ?>
+
 </div>
 <?php endif; ?>
-
-<script>
-function sgthCopiarEnlace(btn) {
-  const url = btn.getAttribute('data-url');
-  const htmlOriginal = btn.innerHTML;
-  navigator.clipboard.writeText(url).then(function () {
-    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Enlace copiado';
-    setTimeout(function () { btn.innerHTML = htmlOriginal; }, 2000);
-  }).catch(function () {
-    window.prompt('Copia el enlace manualmente:', url);
-  });
-}
-</script>

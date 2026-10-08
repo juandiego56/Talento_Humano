@@ -10,6 +10,26 @@
 </div>
 <?php else: ?>
 
+<?php $hvEstado = $empleado['hojavida_estado'] ?? 'borrador'; ?>
+<div class="card">
+  <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <div class="card-title">Tu hoja de vida</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <span class="badge <?= View::hojaVidaEstadoBadge($hvEstado) ?>"><?= View::hojaVidaEstadoLabel($hvEstado) ?></span>
+      <span class="badge badge-borrador">Versión <?= (int)($empleado['hojavida_version'] ?? 1) ?></span>
+      <?php if (!empty($empleado['hojavida_fecha'])): ?><span class="badge badge-borrador">Fecha: <?= View::fecha($empleado['hojavida_fecha']) ?></span><?php endif; ?>
+    </div>
+  </div>
+  <?php if ($hvEstado === 'devuelta' && !empty($empleado['hojavida_observaciones'])): ?>
+    <div class="alert alert-error"><span><strong>Talento Humano te devolvió la hoja de vida:</strong> <?= nl2br(View::e($empleado['hojavida_observaciones'])) ?></span></div>
+  <?php elseif ($hvEstado === 'enviada'): ?>
+    <p class="text-muted" style="margin-bottom:10px">Enviada. Talento Humano la está revisando.</p>
+  <?php elseif ($hvEstado === 'aprobada'): ?>
+    <p class="text-muted" style="margin-bottom:10px">Aprobada por Talento Humano. Si tus datos cambian, puedes actualizarla y se genera una nueva versión.</p>
+  <?php endif; ?>
+  <a href="<?= APP_URL ?>/mi-hoja-de-vida" class="btn btn-primary btn-sm"><?= in_array($hvEstado, ['borrador', 'devuelta'], true) ? 'Diligenciar / corregir mi hoja de vida' : 'Ver mi hoja de vida' ?></a>
+</div>
+
 <div class="form-row" style="align-items:start">
   <div class="card">
     <div class="card-header"><div class="card-title">Tu información</div></div>

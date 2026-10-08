@@ -26,9 +26,14 @@ class Auth {
         return in_array(self::rol(), [ROL_ADMIN, ROL_GESTOR], true);
     }
 
-    public static function requireAuth(): void {
+    /** Si el usuario aún debe cambiar su clave inicial, solo puede usar la pantalla de cambio de clave. */
+    public static function requireAuth(bool $permitirCambioClave = false): void {
         if (!self::check()) {
             header('Location: ' . APP_URL . '/auth/login');
+            exit;
+        }
+        if (!$permitirCambioClave && !empty(Session::get('user')['debe_cambiar_password'])) {
+            header('Location: ' . APP_URL . '/cambiar-password');
             exit;
         }
     }

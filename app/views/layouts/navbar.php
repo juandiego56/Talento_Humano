@@ -4,6 +4,19 @@ $_reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $_relPath = ltrim(str_replace($_appBase, '', $_reqPath), '/');
 $_section = explode('/', explode('?', $_relPath)[0])[0];
 $_active  = fn(string $r): string => ($r === '' ? $_section === '' : $_section === $r) ? 'active' : '';
+
+// Avisos del menú: empleado con hoja de vida pendiente / gestión con hojas por revisar.
+$_hvPendiente = false; $_hvPorRevisar = 0;
+try {
+    require_once ROOT . '/app/helpers/Schema.php';
+    Schema::asegurarHojaVida();
+    if (Auth::esEmpleado() && Auth::empleadoId()) {
+        $_f = DB::fetch("SELECT hojavida_estado FROM empleados WHERE id = ?", [Auth::empleadoId()]);
+        $_hvPendiente = in_array($_f['hojavida_estado'] ?? '', ['borrador', 'devuelta'], true);
+    } elseif (Auth::puedeGestionar()) {
+        $_hvPorRevisar = (int)(DB::fetch("SELECT COUNT(*) AS n FROM empleados WHERE hojavida_estado = 'enviada'")['n'] ?? 0);
+    }
+} catch (\Throwable $_e) {}
 ?>
 <aside class="sidebar">
 
@@ -27,13 +40,24 @@ $_active  = fn(string $r): string => ($r === '' ? $_section === '' : $_section =
       Tablero
     </a>
 
-    <div class="nav-group">Módulo 1 · Personal</div>
+    <?php if (Auth::esEmpleado() && Auth::empleadoId()): ?>
+    <a href="<?= APP_URL ?>/mi-hoja-de-vida" class="<?= $_active('mi-hoja-de-vida') ?>">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+      </svg>
+      Mi hoja de vida
+      <?php if ($_hvPendiente): ?><span class="nav-dot" title="Tienes pendiente tu hoja de vida"></span><?php endif; ?>
+    </a>
+    <?php endif; ?>
+
+    <div class="nav-group">Personal</div>
 
     <a href="<?= APP_URL ?>/empleados" class="<?= $_active('empleados') ?>">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
       </svg>
-      Empleados
+      <?= Auth::esEmpleado() ? 'Mi ficha' : 'Empleados' ?>
+      <?php if ($_hvPorRevisar > 0): ?><span class="nav-badge" title="Hojas de vida por revisar"><?= $_hvPorRevisar ?></span><?php endif; ?>
     </a>
 
     <?php if (Auth::puedeGestionar()): ?>
@@ -69,7 +93,7 @@ $_active  = fn(string $r): string => ($r === '' ? $_section === '' : $_section =
     <?php endif; ?>
 
     <?php if (Auth::puedeGestionar()): ?>
-    <div class="nav-group">Módulo 2 · Nómina</div>
+    <div class="nav-group">Nómina</div>
 
     <a href="<?= APP_URL ?>/nomina" class="<?= $_active('nomina') ?>">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor">
@@ -93,7 +117,7 @@ $_active  = fn(string $r): string => ($r === '' ? $_section === '' : $_section =
     </a>
     <?php endif; ?>
 
-    <div class="nav-group">Módulo 3 · Bienestar</div>
+    <div class="nav-group">Bienestar</div>
 
     <a href="<?= APP_URL ?>/bienestar" class="<?= $_active('bienestar') ?>">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor">

@@ -1,4 +1,6 @@
 <?php
+require_once ROOT . '/app/helpers/Schema.php';
+
 class AuthController {
     public function loginForm(): void {
         if (Auth::check()) {
@@ -9,6 +11,7 @@ class AuthController {
     }
 
     public function procesar(): void {
+        Schema::asegurarCambioClave();
         $email = trim($_POST['email'] ?? '');
         $pass  = $_POST['password'] ?? '';
 
@@ -39,8 +42,51 @@ class AuthController {
             'programa_id'     => $usuario['programa_id'] ? (int)$usuario['programa_id'] : null,
             'programa_nombre' => $usuario['programa_nombre'],
             'foto_path'       => $usuario['foto_path'],
+            'debe_cambiar_password' => !empty($usuario['debe_cambiar_password']),
         ]);
 
+        header('Location: ' . APP_URL . (!empty($usuario['debe_cambiar_password']) ? '/cambiar-password' : '/'));
+        exit;
+    }
+
+    /** Pantalla obligatoria de primer ingreso: el usuario crea su propia contraseña. */
+    public function cambiarForm(): void {
+        Auth::requireAuth(true);
+        if (empty(Session::get('user')['debe_cambiar_password'])) {
+            header('Location: ' . APP_URL . '/');
+            exit;
+        }
+        View::render('auth.cambiar_password', ['titulo' => 'Crea tu contraseña'], layout: '');
+    }
+
+    public function cambiarGuardar(): void {
+        Auth::requireAuth(true);
+        $u = Session::get('user');
+        if (empty($u['debe_cambiar_password']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . APP_URL . '/');
+            exit;
+        }
+        $nueva = $_POST['password'] ?? '';
+        $conf  = $_POST['password_confirm'] ?? '';
+        $fila  = DB::fetch('SELECT password_hash FROM usuarios WHERE id = ?', [$u['id']]);
+
+        $error = null;
+        if (strlen($nueva) < 8)                                   $error = 'La contraseña debe tener al menos 8 caracteres.';
+        elseif (!preg_match('/[A-Za-z]/', $nueva) || !preg_match('/\d/', $nueva)) $error = 'La contraseña debe tener letras y números.';
+        elseif ($nueva !== $conf)                                 $error = 'Las contraseñas no coinciden.';
+        elseif ($fila && password_verify($nueva, $fila['password_hash'])) $error = 'La nueva contraseña no puede ser igual a la anterior.';
+
+        if ($error) {
+            Session::flash('error', $error);
+            header('Location: ' . APP_URL . '/cambiar-password');
+            exit;
+        }
+
+        DB::execute('UPDATE usuarios SET password_hash = ?, debe_cambiar_password = 0 WHERE id = ?',
+            [password_hash($nueva, PASSWORD_DEFAULT), $u['id']]);
+        $u['debe_cambiar_password'] = false;
+        Session::set('user', $u);
+        Session::flash('success', 'Listo, tu contraseña quedó guardada. Desde ahora ingresa con ella.');
         header('Location: ' . APP_URL . '/');
         exit;
     }

@@ -26,6 +26,12 @@
   --danger-txt:   #991b1b;
   --info:         #0284c7;
   --info-bg:      #e0f2fe;
+  --checklist:    #0d9488;
+  --checklist-bg: #ccfbf1;
+  --nomina:       #b45309;
+  --nomina-bg:    #fef3c7;
+  --wellness:     #be185d;
+  --wellness-bg:  #fce7f3;
   --bg:           #f1f5f9;
   --surface:      #ffffff;
   --surface2:     #f8fafc;
@@ -108,7 +114,7 @@ button, a, [role="button"] { -webkit-tap-highlight-color: transparent; }
 .sidebar nav a {
   display: flex; align-items: center; gap: 9px; padding: .6rem .85rem;
   border-radius: var(--r-sm); text-decoration: none; font-size: 14px; font-weight: 700;
-  color: rgba(255,255,255,.6); transition: background var(--tr), color var(--tr), border-color var(--tr);
+  color: rgba(255,255,255,.8); transition: background var(--tr), color var(--tr), border-color var(--tr);
   margin: 1px 8px; border: 1px solid transparent; border-left: 3px solid transparent;
 }
 .sidebar nav a svg { width: 17px; height: 17px; flex-shrink: 0; opacity: .85; }
@@ -118,6 +124,8 @@ button, a, [role="button"] { -webkit-tap-highlight-color: transparent; }
   border-left-color: var(--teal);
 }
 .sidebar nav a.active svg { opacity: 1; color: var(--teal); }
+.nav-badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--teal); color: #0a2540; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+.nav-dot { margin-left: auto; width: 9px; height: 9px; border-radius: 50%; background: #fbbf24; box-shadow: 0 0 0 3px rgba(251,191,36,.25); }
 
 .sidebar-footer {
   padding: .8rem 1rem; font-size: 10.5px; color: rgba(255,255,255,.27);
@@ -202,7 +210,12 @@ button, a, [role="button"] { -webkit-tap-highlight-color: transparent; }
 .stat-revision::before { background: var(--accent); }
 .stat-aprobado::before { background: var(--success); }
 .stat-generado::before { background: var(--primary); }
-.stat-icon  { font-size: 22px; margin-bottom: 10px; display: block; line-height: 1; }
+.stat-icon  {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px; line-height: 1;
+  background: color-mix(in srgb, currentColor 14%, white);
+}
 .stat-num   { font-size: 30px; font-weight: 700; line-height: 1; }
 .stat-label { font-size: 12.5px; color: var(--muted); margin-top: 5px; font-weight: 500; }
 .stat-total   .stat-num { color: var(--primary); }
@@ -327,16 +340,45 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 /* ══════════════════════════════════════════════════
    SGTH — Variantes específicas del dominio de Talento Humano
    ══════════════════════════════════════════════════ */
-.stat-personal::before  { background: var(--blue); }
-.stat-checklist::before { background: var(--info); }
-.stat-nomina::before    { background: var(--success); }
-.stat-bienestar::before { background: var(--accent); }
+.stat-checklist::before { background: var(--checklist); }
+.stat-nomina::before    { background: var(--nomina); }
+.stat-bienestar::before { background: var(--wellness); }
 .stat-alerta::before    { background: var(--warning); }
-.stat-personal  .stat-num { color: var(--blue); }
-.stat-checklist .stat-num { color: var(--info); }
-.stat-nomina    .stat-num { color: var(--success); }
-.stat-bienestar .stat-num { color: var(--accent); }
+.stat-checklist .stat-num { color: var(--checklist); }
+.stat-nomina    .stat-num { color: var(--nomina); }
+.stat-bienestar .stat-num { color: var(--wellness); }
 .stat-alerta    .stat-num { color: var(--warning); }
+
+/* "Empleados activos" es el dato que más mira un gestor de TH a diario:
+   se destaca como tarjeta "hero", oscura, en vez de competir en igualdad
+   visual con las otras tres — así el ojo sabe por dónde empezar. */
+.stat-personal {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--blue) 115%);
+  border-color: transparent;
+}
+.stat-personal::before { display: none; }
+.stat-personal .stat-icon { background: rgba(255,255,255,.16); color: #fff !important; }
+.stat-personal .stat-num  { color: #fff; }
+.stat-personal .stat-label { color: rgba(255,255,255,.78); }
+
+/* ── Tablero: gráficas (SVG en el servidor) ───────────────────────── */
+.chart-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--sh-xs); padding: 18px 20px; min-width: 0; display: flex; flex-direction: column; }
+.chart-title { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.chart-body { height: 150px; display: flex; align-items: center; justify-content: center; }
+.chart-donut { width: 140px; height: 140px; }
+.donut-num { font-size: 19px; font-weight: 700; fill: var(--primary); text-anchor: middle; font-variant-numeric: tabular-nums; }
+.donut-lbl { font-size: 7px; fill: var(--muted); text-anchor: middle; }
+.chart-bars { width: 100%; height: 150px; }
+.bar-val { font-size: 8.5px; font-weight: 700; fill: var(--txt2); text-anchor: middle; }
+.bar-lbl { font-size: 9px; fill: var(--muted); text-anchor: middle; }
+.chart-empty { color: var(--muted); font-size: 13px; }
+.chart-legend { list-style: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display: grid; gap: 6px; font-size: 12.5px; color: var(--txt2); }
+.chart-legend li { display: flex; align-items: center; gap: 8px; }
+.chart-legend b { margin-left: auto; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+.chart-legend .sw { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+@media (max-width: 1100px) { .chart-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { .chart-grid { grid-template-columns: 1fr; } }
 
 .badge-tipo-capacitacion { background: var(--blue-bg); color: var(--blue-h); }
 .badge-tipo-recreacion   { background: var(--success-bg); color: var(--success-txt); }
@@ -478,4 +520,57 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 .hv-mini-chk.on .sq { background: var(--primary); border-color: var(--primary); color: #fff; }
 .hv-mini-chk.on span.t { font-weight: 700; color: var(--primary); }
 
-.hv-tbl-wrap { overflow-x: auto; }
+.hv-tbl-wrap { overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; }
+.hv-tbl { border-bottom: 1px solid #94a3b8; }
+
+/* ── Paginación ─────────────────────────────────────────────── */
+.paginacion { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 4px 0 18px; font-size: 13px; color: var(--muted); }
+.paginacion-nav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.paginacion .pg { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; padding: 0 10px; border: 1.5px solid var(--border-h); border-radius: 8px; color: var(--txt2); text-decoration: none; font-weight: 600; background: #fff; }
+.paginacion .pg:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+.paginacion .pg.activa { background: var(--blue); border-color: var(--blue); color: #fff; }
+.paginacion .pg-gap { padding: 0 4px; color: var(--muted); }
+
+/* ── Hoja de vida del empleado: pasos ──────────────────────── */
+.hv-steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.hv-step { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; }
+a.hv-step:hover { border-color: var(--blue); color: var(--blue); }
+.hv-step-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--border); color: var(--txt2); font-size: 12px; }
+.hv-step.completo .hv-step-num { background: var(--teal); color: #0a2540; }
+.hv-step.actual { border-color: var(--primary); color: var(--primary); box-shadow: 0 0 0 2px rgba(10,37,64,.08); }
+.hv-step.actual .hv-step-num { background: var(--primary); color: #fff; }
+.hv-preview-wrap { border: 1px solid var(--border); border-radius: 12px; background: #fff; overflow: hidden; }
+.hv-preview-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; background: #f8fafc; border-bottom: 1px solid var(--border); }
+.hv-preview-titulo { font-weight: 700; font-size: 13px; color: var(--primary); }
+.hv-preview-acciones { display: flex; gap: 8px; }
+.hv-preview { display: block; width: 100%; min-height: 500px; border: 0; background: #fff; }
+@media (max-width: 640px) { .hv-step-nombre { display: none; } .hv-step.actual .hv-step-nombre { display: inline; } .hv-preview { min-height: 400px; } }
+
+/* Campos ya diligenciados por el empleado (bloqueados para Talento Humano) */
+.campo-bloqueado { background: #f1f5f9 !important; color: var(--muted) !important; cursor: not-allowed; }
+
+/* ── Hoja de vida estilo CvLAC: menú lateral de secciones ────── */
+.cv-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 18px; align-items: start; }
+.cv-menu { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 18px 12px 14px; position: sticky; top: calc(var(--topbar-h) + 16px); max-height: calc(100vh - var(--topbar-h) - 32px); overflow-y: auto; box-shadow: 0 4px 16px rgba(10,37,64,.07); }
+.cv-menu-titulo { color: var(--primary); font-weight: 800; font-size: 15px; padding: 0 10px; line-height: 1.25; }
+.cv-menu-sub { color: #0f9f8f; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 4px 10px 12px; }
+.cv-progreso { margin: 0 10px 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.cv-progreso-txt { display: flex; justify-content: space-between; align-items: baseline; font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }
+.cv-progreso-txt strong { color: var(--primary); font-size: 12px; }
+.cv-progreso-barra { height: 7px; border-radius: 99px; background: #e5ebf2; overflow: hidden; }
+.cv-progreso-barra div { height: 100%; border-radius: 99px; background: var(--teal); transition: width .3s; }
+.cv-item { display: flex; align-items: center; gap: 12px; padding: 11px 12px; margin-bottom: 3px; border-radius: 10px; color: var(--txt2); font-size: 13.5px; font-weight: 600; text-decoration: none; line-height: 1.25; }
+.cv-item small { font-weight: 400; opacity: .7; }
+.cv-opcional { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--border-h); font-style: normal; font-size: 10px; font-weight: 600; letter-spacing: .02em; color: var(--muted); vertical-align: 1px; }
+a.cv-item:hover { background: #f1f5f9; color: var(--primary); }
+.cv-item.actual { background: #e8f1fa; color: var(--primary); font-weight: 800; box-shadow: inset 4px 0 0 var(--primary); }
+.cv-item-ico { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--border-h); background: #fff; color: var(--muted); font-size: 12px; font-weight: 700; }
+.cv-item.actual .cv-item-ico { background: var(--primary); border-color: var(--primary); color: #fff; }
+.cv-item.completo .cv-item-ico { background: var(--teal); border-color: var(--teal); color: #0a2540; }
+.cv-item.completo.actual .cv-item-ico { box-shadow: 0 0 0 3px rgba(45,212,191,.35); }
+@media (max-width: 900px) {
+  .cv-layout { grid-template-columns: 1fr; }
+  .cv-menu { position: static; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 4px; padding: 8px; }
+  .cv-menu-titulo, .cv-menu-sub, .cv-progreso { display: none; }
+  .cv-item { white-space: nowrap; }
+}

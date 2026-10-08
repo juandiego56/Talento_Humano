@@ -92,5 +92,6 @@
 
 </div>
 <script src="<?= APP_URL ?>/assets/js/app.js"></script>
+<script src="<?= APP_URL ?>/assets/js/empleado-form.js?v=<?= @filemtime(ROOT.'/public/assets/js/empleado-form.js') ?>"></script>
 </body>
 </html>

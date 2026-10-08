@@ -1,6 +1,11 @@
 <?php
 class View {
     public static function render(string $view, array $data = [], string $layout = 'main'): void {
+        // Evita que el navegador muestre una copia vieja al volver atrás: la página se vuelve a cargar.
+        if (!headers_sent()) {
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
+        }
         extract($data);
         $content    = ROOT . '/app/views/' . str_replace('.', '/', $view) . '.php';
         $layoutFile = ROOT . '/app/views/layouts/' . $layout . '.php';
@@ -244,5 +249,40 @@ class View {
             1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', default => null,
         };
         return $romano ? "Riesgo $romano" : '—';
+    }
+
+    // ── Hoja de vida del empleado ────────────────────────────────────────
+    public static function hojaVidaEstadoLabel(?string $e): string {
+        return match($e) {
+            'enviada'  => 'En revisión',
+            'aprobada' => 'Aprobada',
+            'devuelta' => 'Devuelta con observaciones',
+            default    => 'Pendiente de diligenciar',
+        };
+    }
+
+    public static function hojaVidaEstadoBadge(?string $e): string {
+        return match($e) {
+            'enviada'  => 'badge-en-revision',
+            'aprobada' => 'badge-aprobado',
+            'devuelta' => 'badge-rechazado',
+            default    => 'badge-borrador',
+        };
+    }
+
+    // ── Paginación ───────────────────────────────────────────────────────
+    /** Calcula la página actual y el desplazamiento. Devuelve [pagina, totalPaginas, offset]. */
+    public static function paginar(int $total, int $porPagina, mixed $paginaPedida): array {
+        $paginas = max(1, (int)ceil($total / $porPagina));
+        $pagina  = min($paginas, max(1, (int)$paginaPedida));
+        return [$pagina, $paginas, ($pagina - 1) * $porPagina];
+    }
+
+    /** URL de la lista actual conservando los filtros y cambiando solo la página. */
+    public static function urlPagina(int $pagina): string {
+        $q = $_GET;
+        $q['pagina'] = $pagina;
+        $ruta = strtok($_SERVER['REQUEST_URI'] ?? '', '?');
+        return $ruta . '?' . http_build_query($q);
     }
 }
